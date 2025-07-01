@@ -1,20 +1,20 @@
+use crate::physics_parameters::PhysicsParameters;
 use bevy::prelude::Resource;
 use deflector_core::evolve::rk4_step;
-use deflector_core::types::ParticleType::Massive;
 use deflector_core::types::ParticleState;
+use deflector_core::types::ParticleType::Massive;
 use deflector_core::warp_drive::WarpDrive;
-use deflector_core::wd_ours::WarpDriveOurs;
 
 #[derive(Resource)]
 pub struct PhysicsManager {
-    warp_drive: WarpDriveOurs,
+    pub physics_parameters: PhysicsParameters,
     step_size: f64  // 0.1
 }
 
 impl PhysicsManager {
-    pub fn new(warp_drive_parameters: WarpDriveOurs, step_size: f64) -> PhysicsManager {
+    pub fn new(physics_parameters: PhysicsParameters, step_size: f64) -> PhysicsManager {
         PhysicsManager {
-            warp_drive: warp_drive_parameters,
+            physics_parameters,
             step_size
         }
     }
@@ -24,7 +24,7 @@ impl PhysicsManager {
                               initial_y: f64, 
                               initial_z: f64, 
                               initial_t: f64) -> ParticleState<f64> {
-        self.warp_drive.make_normalized_state(
+        self.physics_parameters.warp_drive().make_normalized_state(
             initial_t,
             initial_x,
             initial_y,
@@ -37,7 +37,7 @@ impl PhysicsManager {
     }
     
     pub fn new_ship_particle_state(&self, ship_speed: f64) -> ParticleState<f64> {
-        self.warp_drive.make_normalized_state(
+        self.physics_parameters.warp_drive().make_normalized_state(
             0.,
             0.,
             0.,
@@ -50,6 +50,6 @@ impl PhysicsManager {
     }
     
     pub fn step_particle(&self, p: &mut ParticleState<f64>) {
-        rk4_step(self.step_size, &self.warp_drive, p);
+        rk4_step(self.step_size, self.physics_parameters.warp_drive(), p);
     }
 }

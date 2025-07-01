@@ -5,6 +5,8 @@ edition = "2024"
 
 [dependencies]
 bevy = { version = "0.16.1", features = ["default", "wayland", "png"] }
+bevy_mod_imgui = "0.7.1"
+imgui = "0.12.0"
 deflector-core = { git = "ssh://git@github.com-mmor115/lucass-carneiro/DeflectorShields.git", rev = "558734bf" }
 log = { version = "*", features = ["max_level_debug", "release_max_level_warn"] }  # Improves bevy runtime performance
 rand = "0.9.1"

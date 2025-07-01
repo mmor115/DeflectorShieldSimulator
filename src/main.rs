@@ -1,12 +1,14 @@
-mod physics;
+mod physics_manager;
+mod physics_parameters;
 
+use crate::physics_manager::PhysicsManager;
+use crate::physics_parameters::PhysicsParameters;
 use bevy::prelude::*;
+use bevy_mod_imgui::prelude::*;
 use deflector_core::types::{ParticleState, ParticleStateComponents};
-use deflector_core::wd_ours::WarpDriveOurs;
 use rand::Rng;
-use crate::physics::PhysicsManager;
 
-const SHIP_POS: Vec3 = Vec3::new(0., 0., 0.);
+const INITIAL_SHIP_POS: Vec3 = Vec3::new(0., 0., 0.);
 const SHIP_SCALE: Vec3 = Vec3::new(0.05, 0.05, 1.);
 
 const DUST_COLOR: Color = Color::srgb(1.0, 0.5, 0.5);
@@ -24,35 +26,69 @@ const PHYSICS_SCALING_FACTOR: f64 = 10.;
 
 const PHYSICS_STEP_SIZE: f64 = 0.1;
 
-const PHYSICS_SHIP_SPEED: f64 = 0.0;
-const PHYSICS_BUBBLE_RADIUS: f64 = 4.;
-const PHYSICS_BUBBLE_SIGMA: f64 = 4.;
-const PHYSICS_U: f64 = 0.5;
-const PHYSICS_U0: f64 = 0.5;
-const PHYSICS_K0: f64 = 0.1;
-const PHYSICS_TS: f64 = f64::MAX;
-const PHYSICS_DS: f64 = 10.;
-const PHYSICS_EPSILON: f64 = 1e-12;
-
 const CAMERA_ZOOM: f32 = 2.5;
 
 const TICK_RATE: f32 = 60.;
 const TICK_INTERVAL: f32 = 1. / TICK_RATE;
 
 const SHOW_INNER_BUBBLE: bool = true;
-const SHOW_OUTER_BUBBLE: bool = false;
+const SHOW_OUTER_BUBBLE: bool = true;
 
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
+        .add_plugins(ImguiPlugin::default())
         .add_systems(Startup, setup)
         .insert_resource(SpaceDustSpawnTimer(Timer::from_seconds(TICK_INTERVAL, TimerMode::Repeating)))
         .insert_resource(SpaceDustUpdateTimer(Timer::from_seconds(TICK_INTERVAL, TimerMode::Repeating)))
         .insert_resource(ShipUpdateTimer(Timer::from_seconds(TICK_INTERVAL, TimerMode::Repeating)))
+        .insert_resource(UiState { })
         .add_systems(Update, pan_camera)
         .add_systems(FixedUpdate, (update_ship_and_bubbles, spawn_space_dust, update_space_dust).chain())
+        .add_systems(PostUpdate, ui)
         .run();
+}
+
+#[derive(Resource)]
+struct UiState {
+
+}
+
+fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
+      mut state: ResMut<UiState>,
+      mut physics_manager: ResMut<PhysicsManager>) {
+    let ui = imgui_ctx.ui();
+    let physics_params = &mut physics_manager.physics_parameters;
+
+    let window = ui
+        .window("Parameters")
+        .size([500., 200.], imgui::Condition::FirstUseEver)
+        .position([1250., 0.,], imgui::Condition::FirstUseEver)
+        .position_pivot([1.0, 0.])
+        .build(|| {
+            ui.slider("Shield Radius", 1., 4., &mut physics_params.warp_drive.radius);
+            if ui.is_item_hovered() {
+                ui.tooltip_text("The radius of the inner shield.");
+            }
+            
+            ui.slider("Shield Sigma", 0.1, 4., &mut physics_params.warp_drive.sigma);
+            if ui.is_item_hovered() {
+                ui.tooltip_text("The width of the transition between the inner and outer shield regions.");
+            }
+            
+            if ui.slider("u, u0", 0.1, 0.9, &mut physics_params.warp_drive.u) {
+                physics_params.set_u0(physics_params.warp_drive.u);
+            }
+            if ui.is_item_hovered() {
+                ui.tooltip_text("Shield Speed");
+            }
+            
+            ui.slider("k0", 0.0, 0.9, &mut physics_params.warp_drive.k0);
+            if ui.is_item_hovered() {
+                ui.tooltip_text("Deflection Strength");
+            }
+        });
 }
 
 fn setup(mut commands: Commands, 
@@ -61,7 +97,7 @@ fn setup(mut commands: Commands,
          asset_server: Res<AssetServer>) {
     commands.spawn((
         Camera2d,
-        Transform::from_translation(SHIP_POS).with_scale(Vec3::splat(1. / CAMERA_ZOOM))
+        Transform::from_translation(INITIAL_SHIP_POS).with_scale(Vec3::splat(1. / CAMERA_ZOOM))
     ));
 
     let ship_image = asset_server.load::<Image>("images/ship.png");
@@ -73,47 +109,40 @@ fn setup(mut commands: Commands,
     commands.insert_resource(SpaceDustMaterial(space_dust_material));
 
     let physics_manager = PhysicsManager::new(
-        WarpDriveOurs {
-            radius: PHYSICS_BUBBLE_RADIUS,
-            sigma: PHYSICS_BUBBLE_SIGMA,
-            u: PHYSICS_U,
-            u0: PHYSICS_U0,
-            k0: PHYSICS_K0,
-            ts: PHYSICS_TS,
-            ds: PHYSICS_DS,
-            epsilon: PHYSICS_EPSILON
-        },
+        PhysicsParameters::default(),
         PHYSICS_STEP_SIZE
     );
 
+    let params = &physics_manager.physics_parameters;
+
     commands.spawn((
         Sprite::from_image(ship_image),
-        Transform::from_translation(SHIP_POS).with_scale(SHIP_SCALE),
+        Transform::from_translation(INITIAL_SHIP_POS).with_scale(SHIP_SCALE),
         Ship,
-        ShipPhysics(physics_manager.new_ship_particle_state(PHYSICS_SHIP_SPEED))
+        ShipPhysics(physics_manager.new_ship_particle_state(params.ship_speed()))
     ));
 
     if SHOW_INNER_BUBBLE {
-        let inner_bubble_radius = (PHYSICS_BUBBLE_RADIUS * PHYSICS_SCALING_FACTOR) as f32;
+        let inner_bubble_radius = (params.bubble_radius() * PHYSICS_SCALING_FACTOR) as f32;
         let inner_bubble = Annulus::new(inner_bubble_radius - 2.0, inner_bubble_radius);
 
         commands.spawn((
             Bubble,
             Mesh2d(meshes.add(inner_bubble)),
             MeshMaterial2d(materials.add(INNER_BUBBLE_COLOR)),
-            Transform::from_translation(SHIP_POS)
+            Transform::from_translation(INITIAL_SHIP_POS)
         ));
     }
 
     if SHOW_OUTER_BUBBLE {
-        let outer_bubble_radius = ((PHYSICS_BUBBLE_RADIUS + PHYSICS_BUBBLE_SIGMA) * PHYSICS_SCALING_FACTOR) as f32;
+        let outer_bubble_radius = ((params.bubble_radius() + params.bubble_sigma()) * PHYSICS_SCALING_FACTOR) as f32;
         let outer_bubble = Annulus::new(outer_bubble_radius - 2.0, outer_bubble_radius);
 
         commands.spawn((
             Bubble,
             Mesh2d(meshes.add(outer_bubble)),
             MeshMaterial2d(materials.add(OUTER_BUBBLE_COLOR)),
-            Transform::from_translation(SHIP_POS)
+            Transform::from_translation(INITIAL_SHIP_POS)
         ));
     }
 
