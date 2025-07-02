@@ -2132,7 +2132,7 @@ checksum = "85d3cef41d236720ed453e102153a53e4cc3d2fde848c0078a50cf249e8e3e5b"
 [[package]]
 name = "deflector-core"
 version = "0.1.0"
-source = "git+ssh://git@github.com-mmor115/lucass-carneiro/DeflectorShields.git?rev=558734bf#558734bfe1cb987fa048a761ac5c38ca377ef50f"
+source = "git+ssh://git@github.com-mmor115/lucass-carneiro/DeflectorShields.git?rev=0958af0#0958af09f9421d63c20ef42f7250dbb829052a5a"
 dependencies = [
  "env_logger",
  "log",

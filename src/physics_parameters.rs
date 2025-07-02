@@ -1,9 +1,9 @@
 use bevy::prelude::Resource;
+use deflector_core::warp_drive::WarpDrive;
 use deflector_core::wd_ours::WarpDriveOurs;
 
 #[derive(Resource, Debug)]
 pub struct PhysicsParameters {
-    pub ship_speed: f64,
     pub warp_drive: WarpDriveOurs
 }
 
@@ -13,7 +13,13 @@ impl PhysicsParameters {
     }
     
     pub fn ship_speed(&self) -> f64 {
-        self.ship_speed
+        let wd = self.warp_drive();
+        wd.get_bubble_speed() - wd.get_dragging_speed()
+    }
+
+    pub fn covariant_ship_speed(&self) -> f64 {
+        let ss = self.ship_speed();
+        ss / f64::sqrt(1.0 - ss * ss)
     }
 
     pub fn bubble_radius(&self) -> f64 {
@@ -48,8 +54,8 @@ impl PhysicsParameters {
         self.warp_drive.epsilon
     }
 
-    pub fn set_ship_speed(&mut self, value: f64) {
-        self.ship_speed = value;
+    pub fn gamma(&self) -> f64 {
+        self.warp_drive.gamma
     }
 
     pub fn set_bubble_radius(&mut self, value: f64) {
@@ -83,12 +89,15 @@ impl PhysicsParameters {
     pub fn set_epsilon(&mut self, value: f64) {
         self.warp_drive.epsilon = value;
     }
+    
+    pub fn set_gamma(&mut self, value: f64) {
+        self.warp_drive.gamma = value;
+    }
 }
 
 impl Default for PhysicsParameters {
     fn default() -> Self {
         Self {
-            ship_speed: 0.0,
             warp_drive: WarpDriveOurs {
                 radius: 4.,
                 sigma: 4.,
@@ -97,6 +106,7 @@ impl Default for PhysicsParameters {
                 k0: 0.1,
                 ts: f64::MAX,
                 ds: 10.,
+                gamma: 0.,
                 epsilon: 1e-12,
             }
         }

@@ -1,5 +1,6 @@
 mod physics_manager;
 mod physics_parameters;
+mod ui;
 
 use crate::physics_manager::PhysicsManager;
 use crate::physics_parameters::PhysicsParameters;
@@ -7,6 +8,7 @@ use bevy::prelude::*;
 use bevy_mod_imgui::prelude::*;
 use deflector_core::types::{ParticleState, ParticleStateComponents};
 use rand::Rng;
+use crate::ui::{UiPlugin, UiState, VisualSettings};
 
 const INITIAL_SHIP_POS: Vec3 = Vec3::new(0., 0., 0.);
 const SHIP_SCALE: Vec3 = Vec3::new(0.05, 0.05, 1.);
@@ -40,55 +42,12 @@ fn main() {
         .add_plugins(DefaultPlugins)
         .add_plugins(ImguiPlugin::default())
         .add_systems(Startup, setup)
-        .insert_resource(SpaceDustSpawnTimer(Timer::from_seconds(TICK_INTERVAL, TimerMode::Repeating)))
-        .insert_resource(SpaceDustUpdateTimer(Timer::from_seconds(TICK_INTERVAL, TimerMode::Repeating)))
-        .insert_resource(ShipUpdateTimer(Timer::from_seconds(TICK_INTERVAL, TimerMode::Repeating)))
-        .insert_resource(UiState { })
+        .insert_resource(SpaceDustSpawnTimer::default())
+        .insert_resource(PhysicsUpdateTimer::default())
         .add_systems(Update, pan_camera)
-        .add_systems(FixedUpdate, (update_ship_and_bubbles, spawn_space_dust, update_space_dust).chain())
-        .add_systems(PostUpdate, ui)
+        .add_systems(FixedUpdate, (update_ship, update_bubbles, spawn_space_dust, update_space_dust).chain())
+        .add_plugins(UiPlugin)
         .run();
-}
-
-#[derive(Resource)]
-struct UiState {
-
-}
-
-fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
-      mut state: ResMut<UiState>,
-      mut physics_manager: ResMut<PhysicsManager>) {
-    let ui = imgui_ctx.ui();
-    let physics_params = &mut physics_manager.physics_parameters;
-
-    let window = ui
-        .window("Parameters")
-        .size([500., 200.], imgui::Condition::FirstUseEver)
-        .position([1250., 0.,], imgui::Condition::FirstUseEver)
-        .position_pivot([1.0, 0.])
-        .build(|| {
-            ui.slider("Shield Radius", 1., 4., &mut physics_params.warp_drive.radius);
-            if ui.is_item_hovered() {
-                ui.tooltip_text("The radius of the inner shield.");
-            }
-            
-            ui.slider("Shield Sigma", 0.1, 4., &mut physics_params.warp_drive.sigma);
-            if ui.is_item_hovered() {
-                ui.tooltip_text("The width of the transition between the inner and outer shield regions.");
-            }
-            
-            if ui.slider("u, u0", 0.1, 0.9, &mut physics_params.warp_drive.u) {
-                physics_params.set_u0(physics_params.warp_drive.u);
-            }
-            if ui.is_item_hovered() {
-                ui.tooltip_text("Shield Speed");
-            }
-            
-            ui.slider("k0", 0.0, 0.9, &mut physics_params.warp_drive.k0);
-            if ui.is_item_hovered() {
-                ui.tooltip_text("Deflection Strength");
-            }
-        });
 }
 
 fn setup(mut commands: Commands, 
@@ -119,32 +78,22 @@ fn setup(mut commands: Commands,
         Sprite::from_image(ship_image),
         Transform::from_translation(INITIAL_SHIP_POS).with_scale(SHIP_SCALE),
         Ship,
-        ShipPhysics(physics_manager.new_ship_particle_state(params.ship_speed()))
+        ShipPhysics(physics_manager.new_ship_particle_state(params.covariant_ship_speed()))
     ));
-
-    if SHOW_INNER_BUBBLE {
-        let inner_bubble_radius = (params.bubble_radius() * PHYSICS_SCALING_FACTOR) as f32;
-        let inner_bubble = Annulus::new(inner_bubble_radius - 2.0, inner_bubble_radius);
-
-        commands.spawn((
-            Bubble,
-            Mesh2d(meshes.add(inner_bubble)),
-            MeshMaterial2d(materials.add(INNER_BUBBLE_COLOR)),
-            Transform::from_translation(INITIAL_SHIP_POS)
-        ));
-    }
-
-    if SHOW_OUTER_BUBBLE {
-        let outer_bubble_radius = ((params.bubble_radius() + params.bubble_sigma()) * PHYSICS_SCALING_FACTOR) as f32;
-        let outer_bubble = Annulus::new(outer_bubble_radius - 2.0, outer_bubble_radius);
-
-        commands.spawn((
-            Bubble,
-            Mesh2d(meshes.add(outer_bubble)),
-            MeshMaterial2d(materials.add(OUTER_BUBBLE_COLOR)),
-            Transform::from_translation(INITIAL_SHIP_POS)
-        ));
-    }
+    
+    commands.spawn((
+        InnerBubble,
+        make_inner_bubble_mesh(&mut meshes, params),
+        MeshMaterial2d(materials.add(INNER_BUBBLE_COLOR)),
+        Transform::from_translation(INITIAL_SHIP_POS.xy().extend(-5.))
+    ));
+    
+    commands.spawn((
+        OuterBubble,
+        make_outer_bubble_mesh(&mut meshes, params),
+        MeshMaterial2d(materials.add(OUTER_BUBBLE_COLOR)),
+        Transform::from_translation(INITIAL_SHIP_POS.xy().extend(-5.))
+    ));
 
     commands.insert_resource(physics_manager);
 }
@@ -177,11 +126,10 @@ fn spawn_space_dust(time: Res<Time>,
     commands.spawn(SpaceDust::new_entity(pos, ship_physics, mesh, mat, physics_manager));
 }
 
-fn update_ship_and_bubbles(time: Res<Time>,
-                           mut timer: ResMut<ShipUpdateTimer>,
-                           physics: Res<PhysicsManager>,
-                           ship: Single<(&mut Transform, &mut ShipPhysics), With<Ship>>,
-                           bubbles: Query<&mut Transform, (With<Bubble>, Without<Ship>)>) {
+fn update_ship(time: Res<Time>,
+               mut timer: ResMut<PhysicsUpdateTimer>,
+               physics: Res<PhysicsManager>,
+               ship: Single<(&mut Transform, &mut ShipPhysics), With<Ship>>) {
     if !timer.tick(time.delta()).just_finished() {
         return;
     }
@@ -189,22 +137,54 @@ fn update_ship_and_bubbles(time: Res<Time>,
     let (mut ship_transform, mut ship_state) = ship.into_inner();
 
     physics.step_particle(&mut ship_state.0);
-    ship_transform.translation = physics_to_game(ship_state.0);
-    ship_transform.translation.z = -10.;
+    ship_transform.translation = physics_to_game(ship_state.0).xy().extend(-10.);
+}
 
-    for mut bubble_transform in bubbles {
-        bubble_transform.translation = ship_transform.translation;
-        bubble_transform.translation.z = -5.;
+fn update_bubbles(timer: Res<PhysicsUpdateTimer>,
+                  visual_settings: Res<VisualSettings>,
+                  ship_transform: Single<&Transform, With<Ship>>,
+                  mut inner_bubble: Single<(&mut Transform, &mut Visibility, &mut Mesh2d), (With<InnerBubble>, Without<Ship>)>,
+                  mut outer_bubble: Single<(&mut Transform, &mut Visibility, &mut Mesh2d), (With<OuterBubble>, Without<Ship>, Without<InnerBubble>)>,
+                  mut meshes: ResMut<Assets<Mesh>>,
+                  mut ui_state: ResMut<UiState>,
+                  physics: Res<PhysicsManager>) {
+    if !timer.just_finished() {
+        return;
+    }
+
+    for bubble_translation in [&mut inner_bubble.0.translation, &mut outer_bubble.0.translation] {
+        *bubble_translation = ship_transform.translation.xy().extend(-5.);
+    }
+
+    *inner_bubble.1 = match visual_settings.show_inner_bubble {
+        true => Visibility::Visible,
+        false => Visibility::Hidden
+    };
+    
+    *outer_bubble.1 = match visual_settings.show_outer_bubble {
+        true => Visibility::Visible,
+        false => Visibility::Hidden
+    };
+    
+    if ui_state.need_remesh_inner_bubble {
+        meshes.remove(inner_bubble.2.id()).unwrap();
+        *inner_bubble.2 = make_inner_bubble_mesh(&mut meshes, &physics.physics_parameters);
+        ui_state.need_remesh_inner_bubble = false;
+    }
+
+    if ui_state.need_remesh_outer_bubble {
+        meshes.remove(outer_bubble.2.id()).unwrap();
+        *outer_bubble.2 = make_outer_bubble_mesh(&mut meshes, &physics.physics_parameters);
+        ui_state.need_remesh_outer_bubble = false;
     }
 }
 
-fn update_space_dust(time: Res<Time>,
-                     mut timer: ResMut<SpaceDustUpdateTimer>,
+fn update_space_dust(timer: Res<PhysicsUpdateTimer>,
                      mut commands: Commands,
                      physics: Res<PhysicsManager>,
                      particles: Query<(Entity, &mut Transform, &mut SpaceDustPhysics), (With<SpaceDust>, Without<Ship>)>,
                      ship_transform: Single<&Transform, With<Ship>>) {
-    if !timer.tick(time.delta()).just_finished() {
+    if !timer.just_finished() {
         return;
     }
 
@@ -221,19 +201,48 @@ fn update_space_dust(time: Res<Time>,
 #[derive(Resource, Deref, DerefMut)]
 struct SpaceDustSpawnTimer(Timer);
 
-#[derive(Resource, Deref, DerefMut)]
-struct SpaceDustUpdateTimer(Timer);
+impl Default for SpaceDustSpawnTimer {
+    fn default() -> Self {
+        Self(Timer::from_seconds(TICK_INTERVAL, TimerMode::Repeating))
+    }
+}
 
 #[derive(Resource, Deref, DerefMut)]
-struct ShipUpdateTimer(Timer);
+struct PhysicsUpdateTimer(Timer);
+
+impl Default for PhysicsUpdateTimer {
+    fn default() -> Self {
+        Self(Timer::from_seconds(TICK_INTERVAL, TimerMode::Repeating))
+    }
+}
 
 #[derive(Component)]
 #[require(Sprite, Transform)]
 struct Ship;
 
 #[derive(Component)]
-#[require(Sprite, Transform)]
-struct Bubble;
+#[require(Sprite, Transform, Visibility)]
+struct InnerBubble;
+
+#[derive(Component)]
+#[require(Sprite, Transform, Visibility)]
+struct OuterBubble;
+
+fn make_bubble_mesh(mut meshes: &mut ResMut<Assets<Mesh>>, physics_radius: f64) -> Mesh2d {
+    let bubble_radius = (physics_radius * PHYSICS_SCALING_FACTOR) as f32;
+    let annulus = Annulus::new(bubble_radius - 2.0, bubble_radius);
+    Mesh2d(meshes.add(annulus))
+}
+
+fn make_inner_bubble_mesh(meshes: &mut ResMut<Assets<Mesh>>, 
+                          physics_parameters: &PhysicsParameters) -> Mesh2d {
+    make_bubble_mesh(meshes, physics_parameters.bubble_radius())
+}
+
+fn make_outer_bubble_mesh(meshes: &mut ResMut<Assets<Mesh>>,
+                          physics_parameters: &PhysicsParameters) -> Mesh2d {
+    make_bubble_mesh(meshes, physics_parameters.bubble_radius() + physics_parameters.bubble_sigma())
+}
 
 #[derive(Component)]
 #[require(Sprite, Transform)]
