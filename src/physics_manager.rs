@@ -1,11 +1,11 @@
-use bevy::math::Vec3;
 use crate::physics_parameters::PhysicsParameters;
+use crate::PHYSICS_SCALING_FACTOR;
+use bevy::math::Vec3;
 use bevy::prelude::Resource;
 use deflector_core::evolve::rk4_step;
 use deflector_core::types::ParticleState;
 use deflector_core::types::ParticleType::Massive;
 use deflector_core::warp_drive::WarpDrive;
-use crate::PHYSICS_SCALING_FACTOR;
 
 #[derive(Resource)]
 pub struct PhysicsManager {
@@ -46,14 +46,17 @@ impl PhysicsManager {
     pub fn new_particle_state(&self,
                               initial_x: f64,
                               initial_y: f64,
-                              initial_z: f64) -> ParticleState<f64> {
+                              initial_z: f64,
+                              initial_vx: f64, 
+                              initial_vy: f64, 
+                              initial_vz: f64) -> ParticleState<f64> {
         self.physics_parameters.warp_drive().make_normalized_state(
             initial_x,
             initial_y,
             initial_z,
-            0.,
-            0.,
-            0.,
+            initial_vx,
+            initial_vy,
+            initial_vz,
             &Massive
         ).expect("warp_drive.make_normalized_state() failed")
     }
