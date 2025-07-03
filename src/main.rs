@@ -45,7 +45,7 @@ fn main() {
         .insert_resource(SpaceDustSpawnTimer::default())
         .insert_resource(PhysicsUpdateTimer::default())
         .add_systems(Update, pan_camera)
-        .add_systems(FixedUpdate, (update_ship, update_bubbles, spawn_space_dust, update_space_dust).chain())
+        .add_systems(FixedUpdate, (pre_update_physics, update_ship, update_bubbles, spawn_space_dust, update_space_dust).chain())
         .add_plugins(UiPlugin)
         .run();
 }
@@ -126,11 +126,10 @@ fn spawn_space_dust(time: Res<Time>,
     commands.spawn(SpaceDust::new_entity(pos, ship_physics, mesh, mat, physics_manager));
 }
 
-fn update_ship(time: Res<Time>,
-               mut timer: ResMut<PhysicsUpdateTimer>,
+fn update_ship(mut timer: ResMut<PhysicsUpdateTimer>,
                physics: Res<PhysicsManager>,
                ship: Single<(&mut Transform, &mut ShipPhysics), With<Ship>>) {
-    if !timer.tick(time.delta()).just_finished() {
+    if !timer.just_finished() {
         return;
     }
 
@@ -142,7 +141,6 @@ fn update_ship(time: Res<Time>,
 
 fn update_bubbles(timer: Res<PhysicsUpdateTimer>,
                   visual_settings: Res<VisualSettings>,
-                  ship_transform: Single<&Transform, With<Ship>>,
                   mut inner_bubble: Single<(&mut Transform, &mut Visibility, &mut Mesh2d), (With<InnerBubble>, Without<Ship>)>,
                   mut outer_bubble: Single<(&mut Transform, &mut Visibility, &mut Mesh2d), (With<OuterBubble>, Without<Ship>, Without<InnerBubble>)>,
                   mut meshes: ResMut<Assets<Mesh>>,
@@ -153,7 +151,7 @@ fn update_bubbles(timer: Res<PhysicsUpdateTimer>,
     }
 
     for bubble_translation in [&mut inner_bubble.0.translation, &mut outer_bubble.0.translation] {
-        *bubble_translation = ship_transform.translation.xy().extend(-5.);
+        *bubble_translation = physics.bubble_pos().xy().extend(-5.);
     }
 
     *inner_bubble.1 = match visual_settings.show_inner_bubble {
@@ -196,6 +194,16 @@ fn update_space_dust(timer: Res<PhysicsUpdateTimer>,
             commands.entity(entity_id).despawn();
         }
     }
+}
+
+fn pre_update_physics(time: Res<Time>,
+                      mut timer: ResMut<PhysicsUpdateTimer>,
+                      mut physics: ResMut<PhysicsManager>) {
+    if !timer.tick(time.delta()).just_finished() {
+        return;
+    }
+    
+    physics.incr_global_time();
 }
 
 #[derive(Resource, Deref, DerefMut)]
@@ -261,13 +269,11 @@ impl From<ParticleState<f64>> for SpaceDustPhysics {
 }
 
 fn game_to_physics(particle_pos: Vec3,
-                   ship_physics: &ShipPhysics,
                    physics_manager: Res<PhysicsManager>) -> SpaceDustPhysics {
     physics_manager.new_particle_state(
         particle_pos.x as f64 / PHYSICS_SCALING_FACTOR,
         particle_pos.y as f64 / PHYSICS_SCALING_FACTOR,
-        particle_pos.z.into(),
-        ship_physics.t()
+        particle_pos.z.into()
     ).into()
 }
 
@@ -299,7 +305,7 @@ impl SpaceDust {
             MeshMaterial2d(mat.clone()),
             Transform::from_translation(starting_position).with_scale(Vec2::splat(DUST_DIAMETER).extend(1.)),
             SpaceDust,
-            game_to_physics(starting_position, ship_physics, physics_manager)
+            game_to_physics(starting_position, physics_manager)
         )
     }
 }
