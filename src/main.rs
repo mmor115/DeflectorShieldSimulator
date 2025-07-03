@@ -18,7 +18,8 @@ const DUST_COLOR: Color = Color::srgb(1.0, 0.5, 0.5);
 const DUST_DIAMETER: f32 = 1.;
 
 const DUST_SPAWN_LEAD: f32 = 275.;
-const DUST_CULL_DRAG: f32 = 275.;
+const DUST_CULL_DRAG_X: f32 = 275.;
+const DUST_CULL_DRAG_Y: f32 = 160.;
 
 const INNER_BUBBLE_COLOR: Color = Color::srgb(0.0, 0.5, 1.0);
 const OUTER_BUBBLE_COLOR: Color = Color::srgb(0.0, 0.0, 1.0);
@@ -190,8 +191,8 @@ fn update_space_dust(timer: Res<PhysicsUpdateTimer>,
 
         dust_pos.translation = physics_to_game(dust_state.0);
 
-        if dust_pos.translation.x < ship_transform.translation.x - DUST_CULL_DRAG
-           || abs(dust_pos.translation.y) > DUST_CULL_DRAG {
+        if dust_pos.translation.x < ship_transform.translation.x - DUST_CULL_DRAG_X
+           || abs(dust_pos.translation.y) > DUST_CULL_DRAG_Y {
             commands.entity(entity_id).despawn();
         }
     }
