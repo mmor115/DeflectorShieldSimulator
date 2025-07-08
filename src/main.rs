@@ -9,7 +9,7 @@ use bevy::prelude::*;
 use bevy_mod_imgui::prelude::*;
 use deflector_core::types::{ParticleState, ParticleStateComponents};
 use rand::Rng;
-use crate::ui::{ParticleSettings, UiPlugin, UiState, VisualSettings};
+use crate::ui::{ParticleSettings, ShutdownState, UiPlugin, UiState, VisualSettings};
 
 const INITIAL_SHIP_POS: Vec3 = Vec3::new(0., 0., 0.);
 const SHIP_SCALE: Vec3 = Vec3::new(0.05, 0.05, 1.);
@@ -146,8 +146,15 @@ fn update_bubbles(timer: Res<PhysicsUpdateTimer>,
                   mut outer_bubble: Single<(&mut Transform, &mut Visibility, &mut Mesh2d), (With<OuterBubble>, Without<Ship>, Without<InnerBubble>)>,
                   mut meshes: ResMut<Assets<Mesh>>,
                   mut ui_state: ResMut<UiState>,
+                  shutdown_state: Res<ShutdownState>,
                   physics: Res<PhysicsManager>) {
     if !timer.just_finished() {
+        return;
+    }
+
+    if shutdown_state.in_shutdown_state {
+        *inner_bubble.1 = Visibility::Hidden;
+        *outer_bubble.1 = Visibility::Hidden;
         return;
     }
 
@@ -159,12 +166,12 @@ fn update_bubbles(timer: Res<PhysicsUpdateTimer>,
         true => Visibility::Visible,
         false => Visibility::Hidden
     };
-    
+
     *outer_bubble.1 = match visual_settings.show_outer_bubble {
         true => Visibility::Visible,
         false => Visibility::Hidden
     };
-    
+
     if ui_state.need_remesh_inner_bubble {
         meshes.remove(inner_bubble.2.id()).unwrap();
         *inner_bubble.2 = make_inner_bubble_mesh(&mut meshes, &physics.physics_parameters);

@@ -3,7 +3,7 @@ use deflector_core::warp_drive::WarpDrive;
 use deflector_core::wd_ours::WarpDriveOurs;
 use crate::ShipPhysics;
 
-#[derive(Resource, Debug)]
+#[derive(Resource, Clone, Debug)]
 pub struct PhysicsParameters {
     pub warp_drive: WarpDriveOurs
 }
