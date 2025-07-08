@@ -1,7 +1,9 @@
 use crate::physics_manager::PhysicsManager;
 use bevy::app::{App, PostUpdate};
-use bevy::prelude::{NonSendMut, Plugin, ResMut, Resource};
+use bevy::math::Vec3Swizzles;
+use bevy::prelude::{NonSendMut, Plugin, ResMut, Resource, Single, Transform, With};
 use bevy_mod_imgui::ImguiContext;
+use crate::{physics_to_game, Ship, ShipPhysics};
 
 pub struct UiPlugin;
 
@@ -30,7 +32,8 @@ pub struct ParticleSettings {
 #[derive(Resource)]
 pub struct UiState {
     pub need_remesh_inner_bubble: bool,
-    pub need_remesh_outer_bubble: bool
+    pub need_remesh_outer_bubble: bool,
+    pub in_shutdown_state: bool
 }
 
 
@@ -82,6 +85,7 @@ impl Default for UiState {
         Self {
             need_remesh_inner_bubble: false,
             need_remesh_outer_bubble: false,
+            in_shutdown_state: false
         }
     }
 }
@@ -90,9 +94,9 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
       mut visual_settings: ResMut<VisualSettings>,
       mut particle_settings: ResMut<ParticleSettings>,
       mut state: ResMut<UiState>,
-      mut physics_manager: ResMut<PhysicsManager>) {
+      mut physics_manager: ResMut<PhysicsManager>,
+      ship: Single<(&mut Transform, &mut ShipPhysics), With<Ship>>) {
     let ui = imgui_ctx.ui();
-    let physics_params = &mut physics_manager.physics_parameters;
 
     let window = ui
         .window("Parameters")
@@ -101,32 +105,69 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
         .position_pivot([1.0, 0.])
         .build(|| {
             if let Some(_tab_bar) = ui.tab_bar("SettingsTabBar") {
-                if let Some(_tab_item) = ui.tab_item("Physics") {
-                    if ui.slider("Shield Radius", 1., 4., &mut physics_params.warp_drive.radius) {
-                        state.need_remesh_inner_bubble = true;
-                        state.need_remesh_outer_bubble = true;
-                    }
-                    if ui.is_item_hovered() {
-                        ui.tooltip_text("The radius of the inner shield.");
-                    }
+                if let Some(_tab_item) = ui.tab_item("Shield") {
+                    if state.in_shutdown_state {
+                        ui.text_colored([1., 0., 0., 1.], "Shield has been shut down")
+                    } else {
+                        let mut radius_scratch = physics_manager.physics_parameters.bubble_radius();
+                        if ui.slider("Radius", 1., 4., &mut radius_scratch) {
+                            state.need_remesh_inner_bubble = true;
+                            state.need_remesh_outer_bubble = true;
+                            physics_manager.physics_parameters.set_bubble_radius(radius_scratch);
+                        }
+                        if ui.is_item_hovered() {
+                            ui.tooltip_text("The radius of the inner shield.");
+                        }
 
-                    if ui.slider("Shield Sigma", 0.1, 4., &mut physics_params.warp_drive.sigma) {
-                        state.need_remesh_outer_bubble = true;
-                    }
-                    if ui.is_item_hovered() {
-                        ui.tooltip_text("The width of the transition between the inner and outer shield regions.");
-                    }
+                        let mut sigma_scratch = physics_manager.physics_parameters.bubble_sigma();
+                        if ui.slider("Sigma", 0.1, 4., &mut sigma_scratch) {
+                            state.need_remesh_outer_bubble = true;
+                            physics_manager.physics_parameters.set_bubble_sigma(sigma_scratch);
+                        }
+                        if ui.is_item_hovered() {
+                            ui.tooltip_text("The width of the transition between the inner and outer shield regions.");
+                        }
 
-                    /*if ui.slider("u, u0", 0.1, 0.9, &mut physics_params.warp_drive.u) {
-                        physics_params.set_u0(physics_params.warp_drive.u);
-                    }
-                    if ui.is_item_hovered() {
-                        ui.tooltip_text("Shield Speed");
-                    }*/
+                        let mut u_scratch = physics_manager.physics_parameters.u();
+                        let prev_u = u_scratch;
 
-                    ui.slider("Deflection Strength", 0.0, 0.9, &mut physics_params.warp_drive.k0);
-                    if ui.is_item_hovered() {
-                        ui.tooltip_text("k0");
+                        if ui.slider("Speed", 0.1, 0.9, &mut u_scratch) {
+                            let t = physics_manager.global_time();
+                            physics_manager.physics_parameters.set_u(u_scratch, t);
+
+                            let u0 = physics_manager.physics_parameters.u0();
+                            if u0 < 0.1 || u0 > 0.9 {
+                                physics_manager.physics_parameters.set_u(prev_u, t);
+                                ui.tooltip(|| {
+                                    ui.text_colored([1., 0., 0., 1.], "Shield Drag out of range!")
+                                });
+                            }
+                        }
+                        if ui.is_item_hovered() {
+                            ui.tooltip_text("u");
+                        }
+
+                        let mut u0_scratch = physics_manager.physics_parameters.u0();
+                        if ui.slider("Drag", 0.1, 0.9, &mut u0_scratch) {
+                            let (mut ship_transform, mut ship_state) = ship.into_inner();
+                            physics_manager.physics_parameters.set_u0(u0_scratch, &mut ship_state);
+                            ship_transform.translation = physics_to_game(ship_state.0).xy().extend(-10.);
+                        }
+                        if ui.is_item_hovered() {
+                            ui.tooltip_text("u0");
+                        }
+
+                        let mut k0_scratch = physics_manager.physics_parameters.k0();
+                        ui.slider("Deflection Strength", 0.0, 0.9, &mut k0_scratch);
+                        if ui.is_item_hovered() {
+                            ui.tooltip_text("k0");
+                            physics_manager.physics_parameters.set_k0(k0_scratch);
+                        }
+
+                        if ui.button("Shut down") {
+                            physics_manager.physics_parameters.shut_down_now();
+                            state.in_shutdown_state = true;
+                        }
                     }
                 }
 

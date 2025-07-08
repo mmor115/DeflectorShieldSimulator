@@ -11,8 +11,7 @@ use deflector_core::warp_drive::WarpDrive;
 pub struct PhysicsManager {
     pub physics_parameters: PhysicsParameters,
     step_size: f64,
-    global_time: f64,
-    bubble_pos: Vec3
+    global_time: f64
 }
 
 impl PhysicsManager {
@@ -20,8 +19,7 @@ impl PhysicsManager {
         PhysicsManager {
             physics_parameters,
             step_size,
-            global_time: 0.,
-            bubble_pos: Vec3::default()
+            global_time: 0.
         }
     }
     
@@ -32,15 +30,9 @@ impl PhysicsManager {
     pub fn global_time(&self) -> f64 {
         self.global_time
     }
-    
-    pub fn bubble_pos(&self) -> Vec3 {
-        self.bubble_pos
-    }
 
     pub fn incr_global_time(&mut self) {
         self.global_time += self.step_size;
-        self.bubble_pos.x += 
-            (PHYSICS_SCALING_FACTOR * self.step_size * self.physics_parameters.warp_drive.get_bubble_speed()) as f32;
     }
 
     pub fn new_particle_state(&self,

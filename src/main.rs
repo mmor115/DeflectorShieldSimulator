@@ -78,7 +78,7 @@ fn setup(mut commands: Commands,
         Sprite::from_image(ship_image),
         Transform::from_translation(INITIAL_SHIP_POS).with_scale(SHIP_SCALE),
         Ship,
-        ShipPhysics(physics_manager.new_ship_particle_state(params.covariant_ship_speed()))
+        ShipPhysics(physics_manager.new_ship_particle_state(params.ship_speed()))
     ));
     
     commands.spawn((
@@ -141,6 +141,7 @@ fn update_ship(mut timer: ResMut<PhysicsUpdateTimer>,
 
 fn update_bubbles(timer: Res<PhysicsUpdateTimer>,
                   visual_settings: Res<VisualSettings>,
+                  ship: Single<&Transform, With<Ship>>,
                   mut inner_bubble: Single<(&mut Transform, &mut Visibility, &mut Mesh2d), (With<InnerBubble>, Without<Ship>)>,
                   mut outer_bubble: Single<(&mut Transform, &mut Visibility, &mut Mesh2d), (With<OuterBubble>, Without<Ship>, Without<InnerBubble>)>,
                   mut meshes: ResMut<Assets<Mesh>>,
@@ -151,7 +152,7 @@ fn update_bubbles(timer: Res<PhysicsUpdateTimer>,
     }
 
     for bubble_translation in [&mut inner_bubble.0.translation, &mut outer_bubble.0.translation] {
-        *bubble_translation = physics.bubble_pos().xy().extend(-5.);
+        *bubble_translation = ship.translation.xy().extend(-5.);
     }
 
     *inner_bubble.1 = match visual_settings.show_inner_bubble {
@@ -258,17 +259,11 @@ fn make_outer_bubble_mesh(meshes: &mut ResMut<Assets<Mesh>>,
 #[require(Sprite, Transform)]
 struct SpaceDust;
 
-#[derive(Component, Deref, DerefMut)]
+#[derive(Component, Deref, DerefMut, derive_more::From)]
 struct SpaceDustPhysics(ParticleState<f64>);
 
-#[derive(Component, Deref, DerefMut)]
+#[derive(Component, Deref, DerefMut, derive_more::From)]
 struct ShipPhysics(ParticleState<f64>);
-
-impl From<ParticleState<f64>> for SpaceDustPhysics {
-    fn from(value: ParticleState<f64>) -> Self {
-        Self(value)
-    }
-}
 
 fn get_state_for_new_particle(particle_pos: Vec3,
                               particle_settings: Res<ParticleSettings>,
