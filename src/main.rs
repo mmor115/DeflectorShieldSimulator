@@ -33,10 +33,6 @@ const CAMERA_ZOOM: f32 = 2.5;
 const TICK_RATE: f32 = 60.;
 const TICK_INTERVAL: f32 = 1. / TICK_RATE;
 
-const SHOW_INNER_BUBBLE: bool = true;
-const SHOW_OUTER_BUBBLE: bool = true;
-
-
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
@@ -78,7 +74,7 @@ fn setup(mut commands: Commands,
         Sprite::from_image(ship_image),
         Transform::from_translation(INITIAL_SHIP_POS).with_scale(SHIP_SCALE),
         Ship,
-        ShipPhysics(physics_manager.new_ship_particle_state(params.ship_speed()))
+        ShipPhysics(physics_manager.new_ship_particle_state())
     ));
     
     commands.spawn((
@@ -110,8 +106,13 @@ fn spawn_space_dust(time: Res<Time>,
                     mat: Res<SpaceDustMaterial>,
                     physics_manager: Res<PhysicsManager>,
                     ship_transform: Single<&Transform, With<Ship>>,
-                    particle_settings: Res<ParticleSettings>) {
+                    particle_settings: Res<ParticleSettings>,
+                    shutdown_state: Res<ShutdownState>) {
     if !timer.tick(time.delta()).just_finished() {
+        return;
+    }
+
+    if shutdown_state.in_shutdown_state {
         return;
     }
 
@@ -126,7 +127,7 @@ fn spawn_space_dust(time: Res<Time>,
     commands.spawn(SpaceDust::new_entity(pos, mesh, mat, physics_manager, particle_settings));
 }
 
-fn update_ship(mut timer: ResMut<PhysicsUpdateTimer>,
+fn update_ship(timer: ResMut<PhysicsUpdateTimer>,
                physics: Res<PhysicsManager>,
                ship: Single<(&mut Transform, &mut ShipPhysics), With<Ship>>) {
     if !timer.just_finished() {
@@ -159,7 +160,7 @@ fn update_bubbles(timer: Res<PhysicsUpdateTimer>,
     }
 
     for bubble_translation in [&mut inner_bubble.0.translation, &mut outer_bubble.0.translation] {
-        *bubble_translation = ship.translation.xy().extend(-5.);
+        bubble_translation.x = (PHYSICS_SCALING_FACTOR * physics.bubble_x_position()) as f32;
     }
 
     *inner_bubble.1 = match visual_settings.show_inner_bubble {
@@ -246,7 +247,7 @@ struct InnerBubble;
 #[require(Sprite, Transform, Visibility)]
 struct OuterBubble;
 
-fn make_bubble_mesh(mut meshes: &mut ResMut<Assets<Mesh>>, physics_radius: f64) -> Mesh2d {
+fn make_bubble_mesh(meshes: &mut ResMut<Assets<Mesh>>, physics_radius: f64) -> Mesh2d {
     let bubble_radius = (physics_radius * PHYSICS_SCALING_FACTOR) as f32;
     let annulus = Annulus::new(bubble_radius - 2.0, bubble_radius);
     Mesh2d(meshes.add(annulus))
@@ -266,10 +267,10 @@ fn make_outer_bubble_mesh(meshes: &mut ResMut<Assets<Mesh>>,
 #[require(Sprite, Transform)]
 struct SpaceDust;
 
-#[derive(Component, Deref, DerefMut, derive_more::From)]
+#[derive(Component, Deref, DerefMut, Debug, derive_more::From)]
 struct SpaceDustPhysics(ParticleState<f64>);
 
-#[derive(Component, Deref, DerefMut, derive_more::From)]
+#[derive(Component, Deref, DerefMut, Debug, derive_more::From)]
 struct ShipPhysics(ParticleState<f64>);
 
 fn get_state_for_new_particle(particle_pos: Vec3,

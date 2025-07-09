@@ -43,6 +43,12 @@ pub struct ShutdownState {
     temporary_parameters: Option<PhysicsParameters>
 }
 
+impl ShutdownState {
+    fn mut_fields(&mut self) -> (&mut bool, &mut Option<PhysicsParameters>) {
+        (&mut self.in_shutdown_state, &mut self.temporary_parameters)
+    }
+}
+
 impl ParticleSettings {
     fn normalized_velocity_spread(&self) -> f64 {
         let vx = self.x_velocity_variance;
@@ -51,8 +57,6 @@ impl ParticleSettings {
     }
 
     fn validate_velocity(&self) -> bool {
-        let vx = self.x_velocity_variance;
-        let vy = self.y_velocity_variance;
         self.normalized_velocity_spread() < 1.
     }
 
@@ -122,9 +126,11 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
             if let Some(_tab_bar) = ui.tab_bar("SettingsTabBar") {
                 if let Some(_tab_item) = ui.tab_item("Shield") {
                     let global_time = physics_manager.global_time();
-                    
-                    let mut parameters = if shutdown_state.in_shutdown_state {
-                        shutdown_state.temporary_parameters.as_mut().unwrap()
+                    let (mut ship_transform, mut ship_state) = ship.into_inner();
+                    let (in_shutdown_state, temporary_parameters_opt) = shutdown_state.mut_fields();
+
+                    let parameters = if *in_shutdown_state {
+                        temporary_parameters_opt.as_mut().unwrap()
                     } else {
                         &mut physics_manager.physics_parameters
                     };
@@ -169,9 +175,12 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
 
                     let mut u0_scratch = parameters.u0();
                     if ui.slider("Drag", 0.1, 0.9, &mut u0_scratch) {
-                        let (mut ship_transform, mut ship_state) = ship.into_inner();
-                        parameters.set_u0(u0_scratch, &mut ship_state);
-                        ship_transform.translation = physics_to_game(ship_state.0).xy().extend(-10.);
+                        if *in_shutdown_state {
+                            parameters.set_u0_pure(u0_scratch);
+                        } else {
+                            parameters.set_u0(u0_scratch, global_time, &mut ship_state);
+                            ship_transform.translation = physics_to_game(ship_state.0).xy().extend(-10.);
+                        }
                     }
                     if ui.is_item_hovered() {
                         ui.tooltip_text("u0");
@@ -184,16 +193,17 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                         parameters.set_k0(k0_scratch);
                     }
 
-                    if shutdown_state.in_shutdown_state {
+                    if *in_shutdown_state {
                         if ui.button("Shut up") {
-                            physics_manager.physics_parameters = shutdown_state.temporary_parameters.take().unwrap();
-                            shutdown_state.in_shutdown_state = false;
+                            let restart_parameters = temporary_parameters_opt.take().unwrap();
+                            physics_manager.physics_parameters.shut_up(global_time, &mut ship_state, &restart_parameters);
+                            *in_shutdown_state = false;
                         }
                     } else {
                         if ui.button("Shut down") {
-                            shutdown_state.temporary_parameters = Some(physics_manager.physics_parameters.clone());
-                            shutdown_state.in_shutdown_state = true;
-                            physics_manager.physics_parameters.shut_down_now();
+                            *in_shutdown_state = true;
+                            *temporary_parameters_opt = Some(physics_manager.physics_parameters.clone());
+                            physics_manager.physics_parameters.shut_down(global_time);
                         }
                     }
                 }

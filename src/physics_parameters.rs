@@ -1,7 +1,7 @@
+use crate::ShipPhysics;
 use bevy::prelude::Resource;
 use deflector_core::warp_drive::WarpDrive;
 use deflector_core::wd_ours::WarpDriveOurs;
-use crate::ShipPhysics;
 
 #[derive(Resource, Clone, Debug)]
 pub struct PhysicsParameters {
@@ -11,10 +11,6 @@ pub struct PhysicsParameters {
 impl PhysicsParameters {
     pub fn warp_drive(&self) -> &WarpDriveOurs {
         &self.warp_drive
-    }
-
-    pub fn ship_speed(&self) -> f64 {
-        self.warp_drive.compute_ship_speed().unwrap()
     }
 
     pub fn bubble_radius(&self) -> f64 {
@@ -49,16 +45,25 @@ impl PhysicsParameters {
         self.warp_drive.update_u(t, value);
     }
 
-    pub fn set_u0(&mut self, value: f64, ship_state: &mut ShipPhysics) {
-        *ship_state = self.warp_drive.update_u0(value, &ship_state).unwrap().into();
+    pub fn set_u0(&mut self, value: f64, global_time: f64, ship_state: &mut ShipPhysics) {
+        self.warp_drive.update_u0(global_time, value, ship_state).expect("update_u0 failed");
+    }
+
+    pub fn set_u0_pure(&mut self, value: f64) {
+        self.warp_drive.u0 = value;
     }
 
     pub fn set_k0(&mut self, value: f64) {
         self.warp_drive.update_k0(value);
     }
     
-    pub fn shut_down_now(&mut self) {
-        self.warp_drive.shut_down_now();
+    pub fn shut_down(&mut self, global_time: f64) {
+        self.warp_drive.shut_down(global_time);
+    }
+
+    pub fn shut_up(&mut self, global_time: f64, ship_state: &mut ShipPhysics, restart_parameters: &PhysicsParameters) {
+        self.warp_drive.shut_up(global_time, ship_state, &restart_parameters.warp_drive)
+                       .expect("shut_up() failed");
     }
 }
 

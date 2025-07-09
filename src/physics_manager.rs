@@ -1,6 +1,4 @@
 use crate::physics_parameters::PhysicsParameters;
-use crate::PHYSICS_SCALING_FACTOR;
-use bevy::math::Vec3;
 use bevy::prelude::Resource;
 use deflector_core::evolve::rk4_step;
 use deflector_core::types::ParticleState;
@@ -35,6 +33,10 @@ impl PhysicsManager {
         self.global_time += self.step_size;
     }
 
+    pub fn bubble_x_position(&self) -> f64{
+        self.physics_parameters.warp_drive.get_bubble_position(self.global_time)
+    }
+    
     pub fn new_particle_state(&self,
                               initial_x: f64,
                               initial_y: f64,
@@ -53,16 +55,9 @@ impl PhysicsManager {
         ).expect("warp_drive.make_normalized_state() failed")
     }
     
-    pub fn new_ship_particle_state(&self, ship_speed: f64) -> ParticleState<f64> {
-        self.physics_parameters.warp_drive().make_normalized_state(
-            0.,
-            0.,
-            0.,
-            ship_speed,
-            0.,
-            0.,
-            &Massive
-        ).expect("warp_drive.make_normalized_state() failed")
+    pub fn new_ship_particle_state(&self) -> ParticleState<f64> {
+        self.physics_parameters.warp_drive.make_ship_state(0.)
+                                          .expect("warp_drive.make_ship_state() failed")
     }
     
     pub fn step_particle(&self, p: &mut ParticleState<f64>) {
