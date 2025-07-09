@@ -21,7 +21,7 @@ impl PhysicsManager {
         }
     }
     
-    pub fn step_size(&self) -> f64 {
+    pub fn _step_size(&self) -> f64 {
         self.step_size
     }
 
@@ -36,7 +36,7 @@ impl PhysicsManager {
     pub fn bubble_x_position(&self) -> f64{
         self.physics_parameters.warp_drive.get_bubble_position(self.global_time)
     }
-    
+
     pub fn new_particle_state(&self,
                               initial_x: f64,
                               initial_y: f64,

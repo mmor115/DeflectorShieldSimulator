@@ -142,7 +142,6 @@ fn update_ship(timer: ResMut<PhysicsUpdateTimer>,
 
 fn update_bubbles(timer: Res<PhysicsUpdateTimer>,
                   visual_settings: Res<VisualSettings>,
-                  ship: Single<&Transform, With<Ship>>,
                   mut inner_bubble: Single<(&mut Transform, &mut Visibility, &mut Mesh2d), (With<InnerBubble>, Without<Ship>)>,
                   mut outer_bubble: Single<(&mut Transform, &mut Visibility, &mut Mesh2d), (With<OuterBubble>, Without<Ship>, Without<InnerBubble>)>,
                   mut meshes: ResMut<Assets<Mesh>>,

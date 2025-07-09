@@ -117,7 +117,7 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
       ship: Single<(&mut Transform, &mut ShipPhysics), With<Ship>>) {
     let ui = imgui_ctx.ui();
 
-    let window = ui
+    let _window = ui
         .window("Parameters")
         .size([500., 200.], imgui::Condition::FirstUseEver)
         .position([1250., 0.], imgui::Condition::FirstUseEver)
