@@ -178,7 +178,7 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                         if *in_shutdown_state {
                             parameters.set_u0_pure(u0_scratch);
                         } else {
-                            parameters.set_u0(u0_scratch, global_time, &mut ship_state);
+                            parameters.set_u0(u0_scratch, &mut ship_state);
                             ship_transform.translation = physics_to_game(ship_state.0).xy().extend(-10.);
                         }
                     }

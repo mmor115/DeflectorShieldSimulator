@@ -45,8 +45,8 @@ impl PhysicsParameters {
         self.warp_drive.update_u(t, value);
     }
 
-    pub fn set_u0(&mut self, value: f64, global_time: f64, ship_state: &mut ShipPhysics) {
-        self.warp_drive.update_u0(global_time, value, ship_state).expect("update_u0 failed");
+    pub fn set_u0(&mut self, value: f64, ship_state: &mut ShipPhysics) {
+        self.warp_drive.update_u0(value, ship_state).expect("update_u0 failed");
     }
 
     pub fn set_u0_pure(&mut self, value: f64) {
