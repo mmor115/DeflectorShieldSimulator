@@ -158,7 +158,7 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                     let mut u_scratch = parameters.u();
                     let prev_u = u_scratch;
 
-                    if ui.slider("Speed", 0.1, 0.9, &mut u_scratch) {
+                    if ui.slider("Speed", 0.0, 0.9, &mut u_scratch) {
                         parameters.set_u(u_scratch, global_time);
 
                         let u0 = parameters.u0();
@@ -174,7 +174,7 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                     }
 
                     let mut u0_scratch = parameters.u0();
-                    if ui.slider("Drag", 0.1, 0.9, &mut u0_scratch) {
+                    if ui.slider("Drag", 0.0, 0.9, &mut u0_scratch) {
                         if *in_shutdown_state {
                             parameters.set_u0_pure(u0_scratch);
                         } else {
