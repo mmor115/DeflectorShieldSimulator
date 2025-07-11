@@ -1,0 +1,28 @@
+{
+  "physics_config": {
+    "radius": 4.0,
+    "sigma": 4.0,
+    "u": 0.5,
+    "u0": 0.404855,
+    "k0": 0.1,
+    "x0": 0.0,
+    "t0": 0.0,
+    "gamma": 0.0,
+    "epsilon": 1e-12
+  },
+  "particle_settings": {
+    "y_position_variance": 150.0,
+    "z_position_variance": 0.0,
+    "x_velocity_variance": 0.014563,
+    "y_velocity_variance": 0.014563,
+    "z_velocity_variance": 0.0
+  },
+  "visual_settings": {
+    "show_inner_bubble": true,
+    "show_outer_bubble": true
+  },
+  "shutdown_config": {
+    "in_shutdown_state": false,
+    "temporary_parameters": null
+  }
+}

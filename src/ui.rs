@@ -1,5 +1,4 @@
-use std::fs;
-use std::path::Path;
+use crate::config::GlobalConfig;
 use crate::physics_manager::PhysicsManager;
 use crate::physics_parameters::PhysicsParameters;
 use crate::{physics_to_game, Ship, ShipPhysics};
@@ -8,7 +7,8 @@ use bevy::math::Vec3Swizzles;
 use bevy::prelude::{NonSendMut, Plugin, ResMut, Resource, Single, Transform, With};
 use bevy_mod_imgui::ImguiContext;
 use serde::{Deserialize, Serialize};
-use crate::config::GlobalConfig;
+use std::fs;
+use std::path::Path;
 
 pub struct UiPlugin;
 
@@ -97,7 +97,7 @@ impl Default for ParticleSettings {
     fn default() -> Self {
         Self {
             y_position_variance: 150.,
-            z_position_variance: 150.,
+            z_position_variance: 0.,
             x_velocity_variance: 0.0,
             y_velocity_variance: 0.0,
             z_velocity_variance: 0.0
@@ -158,9 +158,10 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
         .position_pivot([1.0, 0.])
         .build(|| {
             if let Some(_tab_bar) = ui.tab_bar("SettingsTabBar") {
+                let (mut ship_transform, mut ship_state) = ship.into_inner();
+
                 if let Some(_tab_item) = ui.tab_item("Bubble") {
                     let global_time = physics_manager.global_time();
-                    let (mut ship_transform, mut ship_state) = ship.into_inner();
                     let (in_shutdown_state, temporary_parameters_opt) = shutdown_state.mut_fields();
 
                     let parameters = if *in_shutdown_state {
@@ -245,7 +246,7 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                 if let Some(_tab_item) = ui.tab_item("Particles") {
                     ui.slider("y-Position Spread", 0.01, 150., &mut particle_settings.y_position_variance);
 
-                    ui.slider("z-Position Spread", 0.01, 150., &mut particle_settings.z_position_variance);
+                    ui.slider("z-Position Spread", 0.0, 150., &mut particle_settings.z_position_variance);
 
                     if ui.slider("x-Velocity Spread", 0., 0.9, &mut particle_settings.x_velocity_variance) {
                         if !particle_settings.validate_velocity() {
@@ -331,10 +332,14 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                                     Ok(config) => {
                                         *visual_settings = config.visual_settings;
                                         *particle_settings = config.particle_settings;
-                                        physics_manager.physics_parameters = (&config.physics_config).into();
                                         *shutdown_state = (&config.shutdown_config).into();
                                         ui_state.need_remesh_inner_bubble = true;
                                         ui_state.need_remesh_outer_bubble = true;
+
+                                        let global_time = physics_manager.global_time();
+                                        let params: PhysicsParameters = (&config.physics_config).into();
+                                        physics_manager.physics_parameters.shut_up(global_time, ship_state.as_mut(), &params);
+
                                     }
                                     Err(e) => {
                                         config_state.err_text = format!("Failed to parse config: {}", e);
