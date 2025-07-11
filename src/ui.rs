@@ -27,8 +27,10 @@ pub struct VisualSettings {
 #[derive(Resource)]
 pub struct ParticleSettings {
     pub y_position_variance: f32, // game units
+    pub z_position_variance: f32, // game units
     pub x_velocity_variance: f64, // physics units
     pub y_velocity_variance: f64, // physics units
+    pub z_velocity_variance: f64, // physics units
 }
 
 #[derive(Resource)]
@@ -53,7 +55,8 @@ impl ParticleSettings {
     fn normalized_velocity_spread(&self) -> f64 {
         let vx = self.x_velocity_variance;
         let vy = self.y_velocity_variance;
-        vx * vx + vy * vy
+        let vz = self.z_velocity_variance;
+        vx * vx + vy * vy + vz * vz
     }
 
     fn validate_velocity(&self) -> bool {
@@ -62,12 +65,20 @@ impl ParticleSettings {
 
     fn max_x_velocity(&self) -> f64 {
         let vy = self.y_velocity_variance;
-        (1. - f64::EPSILON - vy * vy).sqrt()
+        let vz = self.z_velocity_variance;
+        (1. - f64::EPSILON - vy * vy - vz * vz).sqrt()
     }
 
     fn max_y_velocity(&self) -> f64 {
         let vx = self.x_velocity_variance;
-        (1. - f64::EPSILON - vx * vx).sqrt()
+        let vz = self.z_velocity_variance;
+        (1. - f64::EPSILON - vx * vx - vz * vz).sqrt()
+    }
+
+    fn max_z_velocity(&self) -> f64 {
+        let vx = self.x_velocity_variance;
+        let vy = self.y_velocity_variance;
+        (1. - f64::EPSILON - vx * vx - vy * vy).sqrt()
     }
 }
 
@@ -75,8 +86,10 @@ impl Default for ParticleSettings {
     fn default() -> Self {
         Self {
             y_position_variance: 150.,
+            z_position_variance: 150.,
             x_velocity_variance: 0.0,
             y_velocity_variance: 0.0,
+            z_velocity_variance: 0.0
         }
     }
 }
@@ -211,6 +224,8 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                 if let Some(_tab_item) = ui.tab_item("Particles") {
                     ui.slider("y-Position Spread", 0.01, 150., &mut particle_settings.y_position_variance);
 
+                    ui.slider("z-Position Spread", 0.01, 150., &mut particle_settings.z_position_variance);
+
                     if ui.slider("x-Velocity Spread", 0., 0.9, &mut particle_settings.x_velocity_variance) {
                         if !particle_settings.validate_velocity() {
                             particle_settings.x_velocity_variance = particle_settings.max_x_velocity();
@@ -223,6 +238,15 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                     if ui.slider("y-Velocity Spread", 0., 0.9, &mut particle_settings.y_velocity_variance) {
                         if !particle_settings.validate_velocity() {
                             particle_settings.y_velocity_variance = particle_settings.max_y_velocity();
+                            ui.tooltip(|| {
+                                ui.text_colored([1., 0., 0., 1.], "Normalized velocity is too great!")
+                            });
+                        }
+                    }
+
+                    if ui.slider("z-Velocity Spread", 0., 0.9, &mut particle_settings.z_velocity_variance) {
+                        if !particle_settings.validate_velocity() {
+                            particle_settings.z_velocity_variance = particle_settings.max_z_velocity();
                             ui.tooltip(|| {
                                 ui.text_colored([1., 0., 0., 1.], "Normalized velocity is too great!")
                             });

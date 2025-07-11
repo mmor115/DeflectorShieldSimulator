@@ -2,6 +2,7 @@ mod physics_manager;
 mod physics_parameters;
 mod ui;
 
+use std::collections::HashMap;
 use bevy::math::ops::abs;
 use crate::physics_manager::PhysicsManager;
 use crate::physics_parameters::PhysicsParameters;
@@ -14,7 +15,6 @@ use crate::ui::{ParticleSettings, ShutdownState, UiPlugin, UiState, VisualSettin
 const INITIAL_SHIP_POS: Vec3 = Vec3::new(0., 0., 0.);
 const SHIP_SCALE: Vec3 = Vec3::new(0.05, 0.05, 1.);
 
-const DUST_COLOR: Color = Color::srgb(1.0, 0.5, 0.5);
 const DUST_DIAMETER: f32 = 1.;
 
 const DUST_SPAWN_LEAD: f32 = 275.;
@@ -60,8 +60,7 @@ fn setup(mut commands: Commands,
     let space_dust_mesh = meshes.add(Circle::default());
     commands.insert_resource(SpaceDustMesh(space_dust_mesh));
     
-    let space_dust_material = materials.add(DUST_COLOR);
-    commands.insert_resource(SpaceDustMaterial(space_dust_material));
+    commands.insert_resource(SpaceDustColorMaterials::new());
 
     let physics_manager = PhysicsManager::new(
         PhysicsParameters::default(),
@@ -81,14 +80,14 @@ fn setup(mut commands: Commands,
         InnerBubble,
         make_inner_bubble_mesh(&mut meshes, params),
         MeshMaterial2d(materials.add(INNER_BUBBLE_COLOR)),
-        Transform::from_translation(INITIAL_SHIP_POS.xy().extend(-5.))
+        Transform::from_translation(INITIAL_SHIP_POS)
     ));
     
     commands.spawn((
         OuterBubble,
         make_outer_bubble_mesh(&mut meshes, params),
         MeshMaterial2d(materials.add(OUTER_BUBBLE_COLOR)),
-        Transform::from_translation(INITIAL_SHIP_POS.xy().extend(-5.))
+        Transform::from_translation(INITIAL_SHIP_POS)
     ));
 
     commands.insert_resource(physics_manager);
@@ -102,8 +101,9 @@ fn pan_camera(mut camera2d: Single<&mut Transform, (With<Camera2d>, Without<Ship
 fn spawn_space_dust(time: Res<Time>,
                     mut timer: ResMut<SpaceDustSpawnTimer>,
                     mut commands: Commands,
+                    mut materials: ResMut<Assets<ColorMaterial>>,
+                    mut space_dust_mats: ResMut<SpaceDustColorMaterials>,
                     mesh: Res<SpaceDustMesh>,
-                    mat: Res<SpaceDustMaterial>,
                     physics_manager: Res<PhysicsManager>,
                     ship_transform: Single<&Transform, With<Ship>>,
                     particle_settings: Res<ParticleSettings>,
@@ -121,7 +121,12 @@ fn spawn_space_dust(time: Res<Time>,
     let pos = Vec3::new(
         ship_transform.translation.x + DUST_SPAWN_LEAD,
         rng.random_range(-particle_settings.y_position_variance ..= particle_settings.y_position_variance),
-        0.
+        rng.random_range(-particle_settings.z_position_variance ..= particle_settings.z_position_variance),
+    );
+
+    let mat = space_dust_mats.get_space_dust_color(
+        &mut materials,
+        pos.z as f64 / PHYSICS_SCALING_FACTOR
     );
 
     commands.spawn(SpaceDust::new_entity(pos, mesh, mat, physics_manager, particle_settings));
@@ -137,7 +142,7 @@ fn update_ship(timer: ResMut<PhysicsUpdateTimer>,
     let (mut ship_transform, mut ship_state) = ship.into_inner();
 
     physics.step_particle(&mut ship_state.0);
-    ship_transform.translation = physics_to_game(ship_state.0).xy().extend(-10.);
+    ship_transform.translation = physics_to_game(ship_state.0);
 }
 
 fn update_bubbles(timer: Res<PhysicsUpdateTimer>,
@@ -188,16 +193,20 @@ fn update_bubbles(timer: Res<PhysicsUpdateTimer>,
 fn update_space_dust(timer: Res<PhysicsUpdateTimer>,
                      mut commands: Commands,
                      physics: Res<PhysicsManager>,
-                     particles: Query<(Entity, &mut Transform, &mut SpaceDustPhysics), (With<SpaceDust>, Without<Ship>)>,
+                     mut materials: ResMut<Assets<ColorMaterial>>,
+                     mut space_dust_materials: ResMut<SpaceDustColorMaterials>,
+                     particles: Query<(Entity, &mut Transform, &mut SpaceDustPhysics, &mut MeshMaterial2d<ColorMaterial>), (With<SpaceDust>, Without<Ship>)>,
                      ship_transform: Single<&Transform, With<Ship>>) {
     if !timer.just_finished() {
         return;
     }
 
-    for (entity_id, mut dust_pos, mut dust_state) in particles {
+    for (entity_id, mut dust_pos, mut dust_state, mut material) in particles {
         physics.step_particle(&mut dust_state.0);
 
         dust_pos.translation = physics_to_game(dust_state.0);
+
+        *material = MeshMaterial2d(space_dust_materials.get_space_dust_color(&mut materials, dust_state.z()));
 
         if dust_pos.translation.x < ship_transform.translation.x - DUST_CULL_DRAG_X
            || abs(dust_pos.translation.y) > DUST_CULL_DRAG_Y {
@@ -239,11 +248,11 @@ impl Default for PhysicsUpdateTimer {
 struct Ship;
 
 #[derive(Component)]
-#[require(Sprite, Transform, Visibility)]
+#[require(Transform, Visibility)]
 struct InnerBubble;
 
 #[derive(Component)]
-#[require(Sprite, Transform, Visibility)]
+#[require(Transform, Visibility)]
 struct OuterBubble;
 
 fn make_bubble_mesh(meshes: &mut ResMut<Assets<Mesh>>, physics_radius: f64) -> Mesh2d {
@@ -263,7 +272,7 @@ fn make_outer_bubble_mesh(meshes: &mut ResMut<Assets<Mesh>>,
 }
 
 #[derive(Component)]
-#[require(Sprite, Transform)]
+#[require(Transform)]
 struct SpaceDust;
 
 #[derive(Component, Deref, DerefMut, Debug, derive_more::From)]
@@ -280,10 +289,10 @@ fn get_state_for_new_particle(particle_pos: Vec3,
     physics_manager.new_particle_state(
         particle_pos.x as f64 / PHYSICS_SCALING_FACTOR,
         particle_pos.y as f64 / PHYSICS_SCALING_FACTOR,
-        particle_pos.z.into(),
+        particle_pos.z as f64 / PHYSICS_SCALING_FACTOR,
         rng.random_range(-particle_settings.x_velocity_variance ..= particle_settings.x_velocity_variance),
         rng.random_range(-particle_settings.y_velocity_variance ..= particle_settings.y_velocity_variance),
-        0.
+        rng.random_range(-particle_settings.z_velocity_variance ..= particle_settings.z_velocity_variance)
     ).into()
 }
 
@@ -291,15 +300,45 @@ fn physics_to_game(particle_pos: ParticleState<f64>) -> Vec3 {
     Vec3::new(
         (PHYSICS_SCALING_FACTOR * particle_pos.x()) as f32,
         (PHYSICS_SCALING_FACTOR * particle_pos.y()) as f32,
-        particle_pos.z() as f32
+        (PHYSICS_SCALING_FACTOR * particle_pos.z()) as f32
     )
 }
 
 #[derive(Resource, Deref)]
 struct SpaceDustMesh(Handle<Mesh>);
 
-#[derive(Resource, Deref)]
-struct SpaceDustMaterial(Handle<ColorMaterial>);
+#[derive(Resource)]
+struct SpaceDustColorMaterials(HashMap<i64, Handle<ColorMaterial>>);
+
+impl SpaceDustColorMaterials {
+    fn new() -> Self {
+        Self(HashMap::new())
+    }
+
+    fn get_space_dust_color(&mut self,
+                            materials: &mut ResMut<Assets<ColorMaterial>>,
+                            mut physics_z: f64) -> Handle<ColorMaterial> {
+        const Z_MIN: f64 = -150. / PHYSICS_SCALING_FACTOR;
+        const Z_MAX: f64 = 150. / PHYSICS_SCALING_FACTOR;
+
+        physics_z = physics_z.floor();
+        let key = physics_z as i64;
+
+        let interpolation = ((physics_z - Z_MIN) / (Z_MAX - Z_MIN)).clamp(0., 1.);
+        let color = Color::srgb(1.0, interpolation as f32, 0.);
+
+        if let Some(weak_handle) = self.0.get_mut(&key) {
+            if let Some(strong_handle) = materials.get_strong_handle(weak_handle.id()) {
+                return strong_handle;
+            }
+        }
+
+        let material = materials.add(color);
+        self.0.insert(key, material.clone_weak());
+
+        material
+    }
+}
 
 #[derive(Bundle)]
 struct SpaceDustEntity(Mesh2d, MeshMaterial2d<ColorMaterial>, Transform, SpaceDust, SpaceDustPhysics);
@@ -307,12 +346,12 @@ struct SpaceDustEntity(Mesh2d, MeshMaterial2d<ColorMaterial>, Transform, SpaceDu
 impl SpaceDust {
     fn new_entity(starting_position: Vec3,
                   mesh: Res<SpaceDustMesh>,
-                  mat: Res<SpaceDustMaterial>,
+                  mat: Handle<ColorMaterial>,
                   physics_manager: Res<PhysicsManager>,
                   particle_settings: Res<ParticleSettings>) -> SpaceDustEntity {
         SpaceDustEntity(
             Mesh2d(mesh.clone()),
-            MeshMaterial2d(mat.clone()),
+            MeshMaterial2d(mat),
             Transform::from_translation(starting_position).with_scale(Vec2::splat(DUST_DIAMETER).extend(1.)),
             SpaceDust,
             get_state_for_new_particle(starting_position, particle_settings, physics_manager)
