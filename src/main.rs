@@ -1,6 +1,7 @@
 mod physics_manager;
 mod physics_parameters;
 mod ui;
+mod config;
 
 use std::collections::HashMap;
 use bevy::math::ops::abs;

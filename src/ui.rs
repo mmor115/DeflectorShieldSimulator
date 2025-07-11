@@ -1,3 +1,5 @@
+use std::fs;
+use std::path::Path;
 use crate::physics_manager::PhysicsManager;
 use crate::physics_parameters::PhysicsParameters;
 use crate::{physics_to_game, Ship, ShipPhysics};
@@ -5,6 +7,8 @@ use bevy::app::{App, PostUpdate};
 use bevy::math::Vec3Swizzles;
 use bevy::prelude::{NonSendMut, Plugin, ResMut, Resource, Single, Transform, With};
 use bevy_mod_imgui::ImguiContext;
+use serde::{Deserialize, Serialize};
+use crate::config::GlobalConfig;
 
 pub struct UiPlugin;
 
@@ -14,17 +18,18 @@ impl Plugin for UiPlugin {
            .insert_resource(ParticleSettings::default())
            .insert_resource(UiState::default())
            .insert_resource(ShutdownState::default())
+           .insert_resource(ConfigState::default())
            .add_systems(PostUpdate, ui);
     }
 }
 
-#[derive(Resource)]
+#[derive(Resource, Serialize, Deserialize, Clone)]
 pub struct VisualSettings {
     pub show_inner_bubble: bool,
     pub show_outer_bubble: bool,
 }
 
-#[derive(Resource)]
+#[derive(Resource, Serialize, Deserialize, Clone)]
 pub struct ParticleSettings {
     pub y_position_variance: f32, // game units
     pub z_position_variance: f32, // game units
@@ -42,7 +47,13 @@ pub struct UiState {
 #[derive(Resource)]
 pub struct ShutdownState {
     pub in_shutdown_state: bool,
-    temporary_parameters: Option<PhysicsParameters>
+    pub temporary_parameters: Option<PhysicsParameters>
+}
+
+#[derive(Resource)]
+pub struct ConfigState {
+    pub config_path_buf: String,
+    pub err_text: String
 }
 
 impl ShutdownState {
@@ -121,10 +132,20 @@ impl Default for ShutdownState {
     }
 }
 
+impl Default for ConfigState {
+    fn default() -> Self {
+        Self {
+            config_path_buf: String::new(),
+            err_text: String::new()
+        }
+    }
+}
+
 fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
       mut visual_settings: ResMut<VisualSettings>,
       mut particle_settings: ResMut<ParticleSettings>,
       mut ui_state: ResMut<UiState>,
+      mut config_state: ResMut<ConfigState>,
       mut shutdown_state: ResMut<ShutdownState>,
       mut physics_manager: ResMut<PhysicsManager>,
       ship: Single<(&mut Transform, &mut ShipPhysics), With<Ship>>) {
@@ -137,7 +158,7 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
         .position_pivot([1.0, 0.])
         .build(|| {
             if let Some(_tab_bar) = ui.tab_bar("SettingsTabBar") {
-                if let Some(_tab_item) = ui.tab_item("Shield") {
+                if let Some(_tab_item) = ui.tab_item("Bubble") {
                     let global_time = physics_manager.global_time();
                     let (mut ship_transform, mut ship_state) = ship.into_inner();
                     let (in_shutdown_state, temporary_parameters_opt) = shutdown_state.mut_fields();
@@ -267,6 +288,73 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                 if let Some(_tab_item) = ui.tab_item("Visuals") {
                     ui.checkbox("Draw inner shield", &mut visual_settings.show_inner_bubble);
                     ui.checkbox("Draw outer shield", &mut visual_settings.show_outer_bubble);
+                }
+                
+                if let Some(_tab_item) = ui.tab_item("Save & Load") {
+                    ui.input_text("Config Path", &mut config_state.config_path_buf)
+                        .hint("sim.json")
+                        .build();
+                    
+                    if ui.button("Save") {
+                        let path = if config_state.config_path_buf.is_empty() {
+                            Path::new("sim.json")
+                        } else {
+                            Path::new(&config_state.config_path_buf)
+                        };
+                        
+                        let config = GlobalConfig {
+                            physics_config: (&physics_manager.physics_parameters).into(),
+                            particle_settings: particle_settings.clone(),
+                            visual_settings: visual_settings.clone(),
+                            shutdown_config: shutdown_state.as_ref().into()
+                        };
+
+                        let json = serde_json::to_string_pretty(&config).unwrap();
+                        if let Err(e) = fs::write(path, json) {
+                            config_state.err_text = format!("Failed to save config: {}", e);
+                            ui.open_popup("SaveLoadErr");
+                        }
+                    }
+
+                    ui.same_line();
+
+                    if ui.button("Load") {
+                        let path = if config_state.config_path_buf.is_empty() {
+                            Path::new("sim.json")
+                        } else {
+                            Path::new(&config_state.config_path_buf)
+                        };
+
+                        match fs::read_to_string(path) {
+                            Ok(json) => {
+                                match serde_json::from_str::<GlobalConfig>(&json) {
+                                    Ok(config) => {
+                                        *visual_settings = config.visual_settings;
+                                        *particle_settings = config.particle_settings;
+                                        physics_manager.physics_parameters = (&config.physics_config).into();
+                                        *shutdown_state = (&config.shutdown_config).into();
+                                        ui_state.need_remesh_inner_bubble = true;
+                                        ui_state.need_remesh_outer_bubble = true;
+                                    }
+                                    Err(e) => {
+                                        config_state.err_text = format!("Failed to parse config: {}", e);
+                                        ui.open_popup("SaveLoadErr");
+                                    }
+                                }
+                            }
+                            Err(e) => {
+                                config_state.err_text = format!("Failed to read config file: {}", e);
+                                ui.open_popup("SaveLoadErr");
+                            }
+                        }
+                    }
+
+                    ui.popup("SaveLoadErr", || {
+                        ui.text(&config_state.err_text);
+                        if ui.button("Dang it") {
+                            ui.close_current_popup();
+                        }
+                    });
                 }
             }
         });

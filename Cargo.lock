@@ -13,6 +13,8 @@ dependencies = [
  "imgui",
  "log",
  "rand 0.9.1",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]
