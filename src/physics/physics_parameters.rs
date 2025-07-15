@@ -1,4 +1,4 @@
-use crate::ShipPhysics;
+use crate::game_entities::ship::ShipPhysics;
 use bevy::prelude::Resource;
 use deflector_core::warp_drive::WarpDrive;
 use deflector_core::wd_ours::WarpDriveOurs;

@@ -1,18 +1,20 @@
-use crate::config::GlobalConfig;
-use crate::history::SimulationHistory;
-use crate::physics_manager::PhysicsManager;
-use crate::physics_parameters::PhysicsParameters;
-use crate::{physics_to_game, Ship, ShipEntity, ShipImageAsset, ShipPhysics, SpaceDust, SpaceDustColorMaterials, SpaceDustEntity, SpaceDustMesh};
+use crate::game_entities::ship::{Ship, ShipEntity, ShipImageAsset, ShipPhysics};
+use crate::game_entities::space_dust::{SpaceDust, SpaceDustColorMaterials, SpaceDustEntity, SpaceDustMesh};
+use crate::game_systems::config::GlobalConfig;
+use crate::game_systems::history::SimulationHistory;
+use crate::physics::physics_manager::PhysicsManager;
+use crate::physics::physics_parameters::PhysicsParameters;
+use crate::physics_to_game;
 use bevy::app::{App, PostUpdate};
 use bevy::math::Vec3Swizzles;
 use bevy::prelude::*;
 use bevy_mod_imgui::ImguiContext;
+use imgui::StyleColor;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::fs::OpenOptions;
 use std::io::{BufReader, BufWriter, Write};
 use std::path::Path;
-use imgui::StyleColor;
 
 pub struct UiPlugin;
 

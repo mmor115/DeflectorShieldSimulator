@@ -1,10 +1,12 @@
-use crate::config::GlobalConfig;
-use crate::physics_manager::PhysicsManager;
-use crate::ui::{ParticleSettings, ShutdownState, VisualSettings};
-use crate::{PhysicsUpdateTimer, Ship, ShipPhysics, SpaceDust, SpaceDustId, SpaceDustPhysics};
+use crate::game_entities::ship::{Ship, ShipPhysics};
+use crate::game_entities::space_dust::{SpaceDust, SpaceDustId, SpaceDustPhysics};
+use crate::game_systems::config::GlobalConfig;
+use crate::game_systems::seeded_rng::SeededRng;
+use crate::game_systems::timers::PhysicsUpdateTimer;
+use crate::game_systems::ui::{ParticleSettings, ShutdownState, VisualSettings};
+use crate::physics::physics_manager::PhysicsManager;
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
-use crate::seeded_rng::SeededRng;
 
 pub struct HistoryPlugin;
 

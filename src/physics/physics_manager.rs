@@ -1,4 +1,4 @@
-use crate::physics_parameters::PhysicsParameters;
+use crate::physics::physics_parameters::PhysicsParameters;
 use bevy::prelude::Resource;
 use deflector_core::evolve::rk4_step;
 use deflector_core::types::ParticleState;

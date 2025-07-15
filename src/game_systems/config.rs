@@ -1,7 +1,7 @@
+use crate::game_systems::ui::{ParticleSettings, ShutdownState, VisualSettings};
+use crate::physics::physics_parameters::PhysicsParameters;
 use deflector_core::wd_ours::WarpDriveOurs;
-use crate::ui::{ParticleSettings, ShutdownState, VisualSettings};
 use serde::{Deserialize, Serialize};
-use crate::physics_parameters::PhysicsParameters;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct PhysicsConfig {
