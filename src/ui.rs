@@ -422,7 +422,7 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                                 let path = if ui_state.history_path_buf.is_empty() {
                                     Path::new("dump.json")
                                 } else {
-                                    Path::new(&ui_state.config_path_buf)
+                                    Path::new(&ui_state.history_path_buf)
                                 };
 
                                 let dump = if dump_checkpoint {
@@ -440,7 +440,7 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                                 let path = if ui_state.history_path_buf.is_empty() {
                                     Path::new("dump.bin")
                                 } else {
-                                    Path::new(&ui_state.config_path_buf)
+                                    Path::new(&ui_state.history_path_buf)
                                 };
 
                                 let mut oo = OpenOptions::new();
@@ -483,7 +483,7 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                                 let path = if ui_state.history_path_buf.is_empty() {
                                     Path::new("dump.json")
                                 } else {
-                                    Path::new(&ui_state.config_path_buf)
+                                    Path::new(&ui_state.history_path_buf)
                                 };
 
                                 match fs::read_to_string(path) {
@@ -508,7 +508,7 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                                 let path = if ui_state.history_path_buf.is_empty() {
                                     Path::new("dump.bin")
                                 } else {
-                                    Path::new(&ui_state.config_path_buf)
+                                    Path::new(&ui_state.history_path_buf)
                                 };
 
                                 let mut oo = OpenOptions::new();
