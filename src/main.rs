@@ -2,6 +2,8 @@ mod physics_manager;
 mod physics_parameters;
 mod ui;
 mod config;
+mod history;
+mod seeded_rng;
 
 use std::collections::HashMap;
 use bevy::math::ops::abs;
@@ -10,7 +12,12 @@ use crate::physics_parameters::PhysicsParameters;
 use bevy::prelude::*;
 use bevy_mod_imgui::prelude::*;
 use deflector_core::types::{ParticleState, ParticleStateComponents};
+use derive_more::From;
 use rand::Rng;
+use serde::{Deserialize, Serialize};
+use uuid::Uuid;
+use crate::history::{take_snapshot, HistoryPlugin};
+use crate::seeded_rng::{SeededRng, SeededRngPlugin};
 use crate::ui::{ParticleSettings, ShutdownState, UiPlugin, UiState, VisualSettings};
 
 const INITIAL_SHIP_POS: Vec3 = Vec3::new(0., 0., 0.);
@@ -42,8 +49,10 @@ fn main() {
         .insert_resource(SpaceDustSpawnTimer::default())
         .insert_resource(PhysicsUpdateTimer::default())
         .add_systems(Update, pan_camera)
-        .add_systems(FixedUpdate, (pre_update_physics, update_ship, update_bubbles, spawn_space_dust, update_space_dust).chain())
+        .add_systems(FixedUpdate, (pre_update_physics, update_ship, update_bubbles, spawn_space_dust, update_space_dust, take_snapshot).chain())
         .add_plugins(UiPlugin)
+        .add_plugins(SeededRngPlugin)
+        .add_plugins(HistoryPlugin)
         .run();
 }
 
@@ -57,6 +66,7 @@ fn setup(mut commands: Commands,
     ));
 
     let ship_image = asset_server.load::<Image>("images/ship.png");
+    commands.insert_resource(ShipImageAsset::new(ship_image.clone()));
 
     let space_dust_mesh = meshes.add(Circle::default());
     commands.insert_resource(SpaceDustMesh(space_dust_mesh));
@@ -70,12 +80,12 @@ fn setup(mut commands: Commands,
 
     let params = &physics_manager.physics_parameters;
 
-    commands.spawn((
-        Sprite::from_image(ship_image),
-        Transform::from_translation(INITIAL_SHIP_POS).with_scale(SHIP_SCALE),
-        Ship,
-        ShipPhysics(physics_manager.new_ship_particle_state())
-    ));
+    commands.spawn(
+        ShipEntity::new_from_image_handle(
+            ship_image,
+            ShipPhysics(physics_manager.new_ship_particle_state())
+        )
+    );
     
     commands.spawn((
         InnerBubble,
@@ -104,6 +114,7 @@ fn spawn_space_dust(time: Res<Time>,
                     mut commands: Commands,
                     mut materials: ResMut<Assets<ColorMaterial>>,
                     mut space_dust_mats: ResMut<SpaceDustColorMaterials>,
+                    mut rng: ResMut<SeededRng>,
                     mesh: Res<SpaceDustMesh>,
                     physics_manager: Res<PhysicsManager>,
                     ship_transform: Single<&Transform, With<Ship>>,
@@ -117,8 +128,6 @@ fn spawn_space_dust(time: Res<Time>,
         return;
     }
 
-    let mut rng = rand::rng();
-
     let pos = Vec3::new(
         ship_transform.translation.x + DUST_SPAWN_LEAD,
         rng.random_range(-particle_settings.y_position_variance ..= particle_settings.y_position_variance),
@@ -130,7 +139,7 @@ fn spawn_space_dust(time: Res<Time>,
         pos.z as f64 / PHYSICS_SCALING_FACTOR
     );
 
-    commands.spawn(SpaceDust::new_entity(pos, mesh, mat, physics_manager, particle_settings));
+    commands.spawn(SpaceDustEntity::new_from_spawn(pos, mesh, mat, physics_manager, particle_settings, rng));
 }
 
 fn update_ship(timer: ResMut<PhysicsUpdateTimer>,
@@ -276,17 +285,16 @@ fn make_outer_bubble_mesh(meshes: &mut ResMut<Assets<Mesh>>,
 #[require(Transform)]
 struct SpaceDust;
 
-#[derive(Component, Deref, DerefMut, Debug, derive_more::From)]
+#[derive(Component, Deref, DerefMut, Debug, Serialize, Deserialize, From, Clone)]
 struct SpaceDustPhysics(ParticleState<f64>);
 
-#[derive(Component, Deref, DerefMut, Debug, derive_more::From)]
+#[derive(Component, Deref, DerefMut, Debug, Serialize, Deserialize, From, Clone)]
 struct ShipPhysics(ParticleState<f64>);
 
 fn get_state_for_new_particle(particle_pos: Vec3,
                               particle_settings: Res<ParticleSettings>,
-                              physics_manager: Res<PhysicsManager>) -> SpaceDustPhysics {
-    let mut rng = rand::rng();
-
+                              physics_manager: Res<PhysicsManager>,
+                              mut rng: ResMut<SeededRng>) -> SpaceDustPhysics {
     physics_manager.new_particle_state(
         particle_pos.x as f64 / PHYSICS_SCALING_FACTOR,
         particle_pos.y as f64 / PHYSICS_SCALING_FACTOR,
@@ -342,20 +350,73 @@ impl SpaceDustColorMaterials {
 }
 
 #[derive(Bundle)]
-struct SpaceDustEntity(Mesh2d, MeshMaterial2d<ColorMaterial>, Transform, SpaceDust, SpaceDustPhysics);
+struct SpaceDustEntity(Mesh2d, MeshMaterial2d<ColorMaterial>, Transform, SpaceDust, SpaceDustPhysics, SpaceDustId);
 
-impl SpaceDust {
-    fn new_entity(starting_position: Vec3,
-                  mesh: Res<SpaceDustMesh>,
-                  mat: Handle<ColorMaterial>,
-                  physics_manager: Res<PhysicsManager>,
-                  particle_settings: Res<ParticleSettings>) -> SpaceDustEntity {
+#[derive(Component, From, Clone, Serialize, Deserialize)]
+struct SpaceDustId(Uuid);
+
+impl SpaceDustEntity {
+    fn new_from_spawn(starting_position: Vec3,
+                      mesh: Res<SpaceDustMesh>,
+                      mat: Handle<ColorMaterial>,
+                      physics_manager: Res<PhysicsManager>,
+                      particle_settings: Res<ParticleSettings>,
+                      rng: ResMut<SeededRng>) -> Self {
         SpaceDustEntity(
-            Mesh2d(mesh.clone()),
+            Mesh2d(mesh.0.clone()),
             MeshMaterial2d(mat),
             Transform::from_translation(starting_position).with_scale(Vec2::splat(DUST_DIAMETER).extend(1.)),
             SpaceDust,
-            get_state_for_new_particle(starting_position, particle_settings, physics_manager)
+            get_state_for_new_particle(starting_position, particle_settings, physics_manager, rng),
+            Uuid::new_v4().into()
+        )
+    }
+
+    fn new_from_resume(mesh: &Res<SpaceDustMesh>,
+                       mut color_materials: &mut ResMut<Assets<ColorMaterial>>,
+                       space_dust_mats: &mut ResMut<SpaceDustColorMaterials>,
+                       state: SpaceDustPhysics,
+                       id: SpaceDustId) -> Self {
+        let mat = space_dust_mats.get_space_dust_color(
+            &mut color_materials,
+            state.z()
+        );
+
+        SpaceDustEntity(
+            Mesh2d(mesh.0.clone()),
+            MeshMaterial2d(mat),
+            Transform::from_translation(physics_to_game(*state)).with_scale(Vec2::splat(DUST_DIAMETER).extend(1.)),
+            SpaceDust,
+            state,
+            id
+        )
+    }
+}
+
+#[derive(Resource, Deref)]
+struct ShipImageAsset(Handle<Image>);
+
+impl ShipImageAsset {
+    fn new(img: Handle<Image>) -> Self {
+        ShipImageAsset(img)
+    }
+}
+
+#[derive(Bundle)]
+struct ShipEntity(Sprite, Transform, Ship, ShipPhysics);
+
+impl ShipEntity {
+    fn new(ship_image_asset: Res<ShipImageAsset>, state: ShipPhysics) -> Self {
+        Self::new_from_image_handle(ship_image_asset.clone(), state)
+    }
+
+    fn new_from_image_handle(ship_image: Handle<Image>, state: ShipPhysics) -> Self {
+        let translation = physics_to_game(*state);
+        ShipEntity(
+            Sprite::from_image(ship_image),
+            Transform::from_translation(translation).with_scale(SHIP_SCALE),
+            Ship,
+            state
         )
     }
 }

@@ -33,6 +33,10 @@ impl PhysicsManager {
         self.global_time += self.step_size;
     }
 
+    pub fn set_global_time(&mut self, global_time: f64) {
+        self.global_time = global_time;
+    }
+
     pub fn bubble_x_position(&self) -> f64{
         self.physics_parameters.warp_drive.get_bubble_position(self.global_time)
     }

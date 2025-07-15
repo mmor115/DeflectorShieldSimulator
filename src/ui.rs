@@ -1,14 +1,18 @@
 use crate::config::GlobalConfig;
+use crate::history::SimulationHistory;
 use crate::physics_manager::PhysicsManager;
 use crate::physics_parameters::PhysicsParameters;
-use crate::{physics_to_game, Ship, ShipPhysics};
+use crate::{physics_to_game, Ship, ShipEntity, ShipImageAsset, ShipPhysics, SpaceDust, SpaceDustColorMaterials, SpaceDustEntity, SpaceDustMesh};
 use bevy::app::{App, PostUpdate};
 use bevy::math::Vec3Swizzles;
-use bevy::prelude::{NonSendMut, Plugin, ResMut, Resource, Single, Transform, With};
+use bevy::prelude::*;
 use bevy_mod_imgui::ImguiContext;
 use serde::{Deserialize, Serialize};
 use std::fs;
+use std::fs::OpenOptions;
+use std::io::{BufReader, BufWriter, Write};
 use std::path::Path;
+use imgui::StyleColor;
 
 pub struct UiPlugin;
 
@@ -18,7 +22,7 @@ impl Plugin for UiPlugin {
            .insert_resource(ParticleSettings::default())
            .insert_resource(UiState::default())
            .insert_resource(ShutdownState::default())
-           .insert_resource(ConfigState::default())
+           .insert_resource(SaveLoadState::default())
            .add_systems(PostUpdate, ui);
     }
 }
@@ -41,7 +45,12 @@ pub struct ParticleSettings {
 #[derive(Resource)]
 pub struct UiState {
     pub need_remesh_inner_bubble: bool,
-    pub need_remesh_outer_bubble: bool
+    pub need_remesh_outer_bubble: bool,
+    config_path_buf: String,
+    history_path_buf: String,
+    history_format: HistoryFormat,
+    err_text: String,
+    resume_idx_buf: usize
 }
 
 #[derive(Resource)]
@@ -51,9 +60,14 @@ pub struct ShutdownState {
 }
 
 #[derive(Resource)]
-pub struct ConfigState {
-    pub config_path_buf: String,
-    pub err_text: String
+pub struct SaveLoadState {
+    loaded_history: Option<SimulationHistory>
+}
+
+#[derive(PartialEq, Copy, Clone)]
+enum HistoryFormat {
+    Json,
+    Bin
 }
 
 impl ShutdownState {
@@ -118,7 +132,12 @@ impl Default for UiState {
     fn default() -> Self {
         Self {
             need_remesh_inner_bubble: false,
-            need_remesh_outer_bubble: false
+            need_remesh_outer_bubble: false,
+            config_path_buf: String::new(),
+            history_path_buf: String::new(),
+            err_text: String::new(),
+            history_format: HistoryFormat::Bin,
+            resume_idx_buf: 0
         }
     }
 }
@@ -132,11 +151,10 @@ impl Default for ShutdownState {
     }
 }
 
-impl Default for ConfigState {
+impl Default for SaveLoadState {
     fn default() -> Self {
         Self {
-            config_path_buf: String::new(),
-            err_text: String::new()
+            loaded_history: None,
         }
     }
 }
@@ -145,10 +163,17 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
       mut visual_settings: ResMut<VisualSettings>,
       mut particle_settings: ResMut<ParticleSettings>,
       mut ui_state: ResMut<UiState>,
-      mut config_state: ResMut<ConfigState>,
+      mut config_state: ResMut<SaveLoadState>,
       mut shutdown_state: ResMut<ShutdownState>,
       mut physics_manager: ResMut<PhysicsManager>,
-      ship: Single<(&mut Transform, &mut ShipPhysics), With<Ship>>) {
+      mut commands: Commands,
+      ship_image_asset: Res<ShipImageAsset>,
+      space_dust_mesh: Res<SpaceDustMesh>,
+      mut color_materials: ResMut<Assets<ColorMaterial>>,
+      mut space_dust_mats: ResMut<SpaceDustColorMaterials>,
+      mut history: ResMut<SimulationHistory>,
+      ship: Single<(Entity, &mut Transform, &mut ShipPhysics), With<Ship>>,
+      particles: Query<Entity, (With<SpaceDust>, Without<Ship>)>) {
     let ui = imgui_ctx.ui();
 
     let _window = ui
@@ -157,9 +182,9 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
         .position([1250., 0.], imgui::Condition::FirstUseEver)
         .position_pivot([1.0, 0.])
         .build(|| {
-            if let Some(_tab_bar) = ui.tab_bar("SettingsTabBar") {
-                let (mut ship_transform, mut ship_state) = ship.into_inner();
+            let (ship_entity, mut ship_transform, mut ship_state) = ship.into_inner();
 
+            if let Some(_tab_bar) = ui.tab_bar("SettingsTabBar") {
                 if let Some(_tab_item) = ui.tab_item("Bubble") {
                     let global_time = physics_manager.global_time();
                     let (in_shutdown_state, temporary_parameters_opt) = shutdown_state.mut_fields();
@@ -292,15 +317,15 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                 }
                 
                 if let Some(_tab_item) = ui.tab_item("Save & Load") {
-                    ui.input_text("Config Path", &mut config_state.config_path_buf)
+                    ui.input_text("Config Path", &mut ui_state.config_path_buf)
                         .hint("sim.json")
                         .build();
                     
-                    if ui.button("Save") {
-                        let path = if config_state.config_path_buf.is_empty() {
+                    if ui.button("Save Config") {
+                        let path = if ui_state.config_path_buf.is_empty() {
                             Path::new("sim.json")
                         } else {
-                            Path::new(&config_state.config_path_buf)
+                            Path::new(&ui_state.config_path_buf)
                         };
                         
                         let config = GlobalConfig {
@@ -312,18 +337,18 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
 
                         let json = serde_json::to_string_pretty(&config).unwrap();
                         if let Err(e) = fs::write(path, json) {
-                            config_state.err_text = format!("Failed to save config: {}", e);
+                            ui_state.err_text = format!("Failed to save config: {}", e);
                             ui.open_popup("SaveLoadErr");
                         }
                     }
 
                     ui.same_line();
 
-                    if ui.button("Load") {
-                        let path = if config_state.config_path_buf.is_empty() {
+                    if ui.button("Load & Apply Config") {
+                        let path = if ui_state.config_path_buf.is_empty() {
                             Path::new("sim.json")
                         } else {
-                            Path::new(&config_state.config_path_buf)
+                            Path::new(&ui_state.config_path_buf)
                         };
 
                         match fs::read_to_string(path) {
@@ -339,23 +364,269 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                                         let global_time = physics_manager.global_time();
                                         let params: PhysicsParameters = (&config.physics_config).into();
                                         physics_manager.physics_parameters.shut_up(global_time, ship_state.as_mut(), &params);
-
                                     }
                                     Err(e) => {
-                                        config_state.err_text = format!("Failed to parse config: {}", e);
+                                        ui_state.err_text = format!("Failed to parse config: {}", e);
                                         ui.open_popup("SaveLoadErr");
                                     }
                                 }
                             }
                             Err(e) => {
-                                config_state.err_text = format!("Failed to read config file: {}", e);
+                                ui_state.err_text = format!("Failed to read config file: {}", e);
                                 ui.open_popup("SaveLoadErr");
                             }
                         }
                     }
 
+                    ui.separator();
+
+                    let path_hint = match ui_state.history_format {
+                        HistoryFormat::Json => "dump.json",
+                        HistoryFormat::Bin => "dump.bin"
+                    };
+                    
+                    ui.input_text("History Path", &mut ui_state.history_path_buf)
+                        .hint(path_hint)
+                        .build();
+
+                    ui.text("History Format:");
+
+                    ui.same_line();
+                    ui.radio_button("Binary", &mut ui_state.history_format, HistoryFormat::Bin);
+                    if ui.is_item_hovered() {
+                        ui.tooltip_text("Fast. Produces small, indecipherable files.");
+                    }
+
+                    ui.same_line();
+                    ui.radio_button("JSON", &mut ui_state.history_format, HistoryFormat::Json);
+                    if ui.is_item_hovered() {
+                        ui.tooltip_text("Slow. Produces large, human-readable files.");
+                    }
+
+                    let dump_checkpoint = ui.button("Dump Single Checkpoint");
+
+                    ui.same_line();
+
+                    let dump_history;
+                    {
+                        let _t = ui.push_style_color(StyleColor::Button, [1., 0.25, 0.25, 1.]);
+                        dump_history = ui.button("Dump Entire History");
+                        if ui.is_item_hovered() {
+                            ui.tooltip_text("This can be very slow and produce very large files!");
+                        }
+                    }
+
+                    if dump_checkpoint || dump_history {
+                        match ui_state.history_format {
+                            HistoryFormat::Json => {
+                                let path = if ui_state.history_path_buf.is_empty() {
+                                    Path::new("dump.json")
+                                } else {
+                                    Path::new(&ui_state.config_path_buf)
+                                };
+
+                                let dump = if dump_checkpoint {
+                                    serde_json::to_string_pretty(&history.checkpoint()).unwrap()
+                                } else {
+                                    serde_json::to_string_pretty(history.as_ref()).unwrap()
+                                };
+
+                                if let Err(e) = fs::write(path, dump) {
+                                    ui_state.err_text = format!("Failed to dump: {}", e);
+                                    ui.open_popup("SaveLoadErr");
+                                }
+                            }
+                            HistoryFormat::Bin => {
+                                let path = if ui_state.history_path_buf.is_empty() {
+                                    Path::new("dump.bin")
+                                } else {
+                                    Path::new(&ui_state.config_path_buf)
+                                };
+
+                                let mut oo = OpenOptions::new();
+                                oo.read(true)
+                                    .write(true)
+                                    .create(true);
+
+                                match oo.open(path) {
+                                    Ok(file) => {
+                                        let mut writer = BufWriter::new(file);
+
+                                        let dump_result = if dump_checkpoint {
+                                            bincode::serde::encode_into_std_write(&history.checkpoint(), &mut writer, bincode::config::standard())
+                                        } else {
+                                            bincode::serde::encode_into_std_write(history.as_ref(), &mut writer, bincode::config::standard())
+                                        };
+
+                                        if let Err(e) = dump_result {
+                                            ui_state.err_text = format!("Failed to dump: {}", e);
+                                            ui.open_popup("SaveLoadErr");
+                                        } else {
+                                            if let Err(e) = writer.flush() {
+                                                ui_state.err_text = format!("Failed to dump: {}", e);
+                                                ui.open_popup("SaveLoadErr");
+                                            }
+                                        }
+                                    }
+                                    Err(e) => {
+                                        ui_state.err_text = format!("Failed to open file: {}", e);
+                                        ui.open_popup("SaveLoadErr");
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if ui.button("Load History") {
+                        match ui_state.history_format {
+                            HistoryFormat::Json => {
+                                let path = if ui_state.history_path_buf.is_empty() {
+                                    Path::new("dump.json")
+                                } else {
+                                    Path::new(&ui_state.config_path_buf)
+                                };
+
+                                match fs::read_to_string(path) {
+                                    Ok(json) => {
+                                        match serde_json::from_str::<SimulationHistory>(&json) {
+                                            Ok(history) => {
+                                                config_state.loaded_history = Some(history);
+                                            }
+                                            Err(e) => {
+                                                ui_state.err_text = format!("Failed to parse history: {}", e);
+                                                ui.open_popup("SaveLoadErr");
+                                            }
+                                        }
+                                    }
+                                    Err(e) => {
+                                        ui_state.err_text = format!("Failed to read history file: {}", e);
+                                        ui.open_popup("SaveLoadErr");
+                                    }
+                                }
+                            }
+                            HistoryFormat::Bin => {
+                                let path = if ui_state.history_path_buf.is_empty() {
+                                    Path::new("dump.bin")
+                                } else {
+                                    Path::new(&ui_state.config_path_buf)
+                                };
+
+                                let mut oo = OpenOptions::new();
+                                oo.read(true);
+
+                                match oo.open(path) {
+                                    Ok(file) => {
+                                        let mut reader = BufReader::new(file);
+
+                                        match bincode::serde::decode_from_std_read(&mut reader, bincode::config::standard()) {
+                                            Ok(history) => {
+                                                config_state.loaded_history = Some(history);
+                                            },
+                                            Err(e) => {
+                                                ui_state.err_text = format!("Failed to read history file: {}", e);
+                                                ui.open_popup("SaveLoadErr");
+                                            }
+                                        }
+                                    }
+                                    Err(e) => {
+                                        ui_state.err_text = format!("Failed to open file: {}", e);
+                                        ui.open_popup("SaveLoadErr");
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    ui.same_line();
+
+                    if ui.button("Unload History") {
+                        config_state.loaded_history = None;
+                    }
+
+                    ui.separator();
+
+                    match &config_state.loaded_history {
+                        Some(loaded_history) => {
+                            let snapshots_len = loaded_history.snapshots.len();
+
+                            ui.text(format!("Checkpoints: {}", snapshots_len));
+                            let mut load_idx: Option<usize> = None;
+
+                            if ui.button("Resume from Start") {
+                                load_idx = Some(0);
+                            }
+
+                            if ui.button("Resume from") {
+                                load_idx = Some(ui_state.resume_idx_buf);
+                            }
+
+                            ui.same_line();
+
+                            ui.input_scalar(" ", &mut ui_state.resume_idx_buf)
+                                .step(1)
+                                .step_fast(10)
+                                .build();
+
+                            if ui.button("Resume from End") {
+                                load_idx = Some(snapshots_len - 1);
+                            }
+
+                            if let Some(load_idx) = load_idx {
+                                if load_idx >= snapshots_len {
+                                    ui_state.err_text = format!("Index out of range: 0 <= {} < {}", load_idx, snapshots_len);
+                                    ui.open_popup("SaveLoadErr");
+                                } else {
+                                    let snapshot = &loaded_history.snapshots[load_idx];
+                                    let config = &snapshot.global_config;
+
+                                    *visual_settings = config.visual_settings.clone();
+                                    *particle_settings = config.particle_settings.clone();
+                                    *shutdown_state = (&config.shutdown_config).into();
+                                    ui_state.need_remesh_inner_bubble = true;
+                                    ui_state.need_remesh_outer_bubble = true;
+
+                                    physics_manager.set_global_time(snapshot.global_time);
+                                    physics_manager.physics_parameters = (&config.physics_config).into();
+
+                                    commands.insert_resource(snapshot.seeded_rng.clone());
+
+                                    for entity_id in particles {
+                                        commands.entity(entity_id).despawn();
+                                    }
+
+                                    commands.entity(ship_entity).despawn();
+
+                                    commands.spawn(
+                                        ShipEntity::new(
+                                            ship_image_asset,
+                                            snapshot.ship_state.physics.clone()
+                                        )
+                                    );
+
+                                    let particles_batch = snapshot.particle_states.clone();
+                                    let particles_batch = particles_batch.into_iter().map(|s| {
+                                        SpaceDustEntity::new_from_resume(
+                                            &space_dust_mesh,
+                                            &mut color_materials,
+                                            &mut space_dust_mats,
+                                            s.physics,
+                                            s.id
+                                        )
+                                    }).collect::<Vec<_>>();
+
+                                    commands.spawn_batch(particles_batch);
+
+                                    *history = loaded_history.clone();
+                                }
+                            }
+                        }
+                        None => {
+                            ui.text_disabled("No history loaded.");
+                        }
+                    }
+
                     ui.popup("SaveLoadErr", || {
-                        ui.text(&config_state.err_text);
+                        ui.text(&ui_state.err_text);
                         if ui.button("Dang it") {
                             ui.close_current_popup();
                         }

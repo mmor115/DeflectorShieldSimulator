@@ -3,7 +3,7 @@ use crate::ui::{ParticleSettings, ShutdownState, VisualSettings};
 use serde::{Deserialize, Serialize};
 use crate::physics_parameters::PhysicsParameters;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct PhysicsConfig {
     pub radius: f64,
     pub sigma: f64,
@@ -16,13 +16,13 @@ pub struct PhysicsConfig {
     pub epsilon: f64
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct ShutdownConfig {
     pub in_shutdown_state: bool,
     pub temporary_parameters: Option<PhysicsConfig>
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct GlobalConfig {
     pub physics_config: PhysicsConfig,
     pub particle_settings: ParticleSettings,
