@@ -6,6 +6,7 @@ use bevy::asset::Assets;
 use bevy::math::ops::abs;
 use bevy::prelude::{ColorMaterial, Commands, Entity, MeshMaterial2d, Query, Res, ResMut, Single, Transform, With, Without};
 use deflector_core::types::ParticleStateComponents;
+use crate::game_systems::ui::PauseControls;
 
 const DUST_CULL_DRAG_X: f32 = 275.;
 const DUST_CULL_DRAG_Y: f32 = 160.;
@@ -16,7 +17,12 @@ pub fn update_space_dust(timer: Res<PhysicsUpdateTimer>,
                          mut materials: ResMut<Assets<ColorMaterial>>,
                          mut space_dust_materials: ResMut<SpaceDustColorMaterials>,
                          particles: Query<(Entity, &mut Transform, &mut SpaceDustPhysics, &mut MeshMaterial2d<ColorMaterial>), (With<SpaceDust>, Without<Ship>)>,
-                         ship_transform: Single<&Transform, With<Ship>>) {
+                         ship_transform: Single<&Transform, With<Ship>>,
+                         pause_controls: Res<PauseControls>) {
+    if pause_controls.paused {
+        return;
+    }
+
     if !timer.just_finished() {
         return;
     }

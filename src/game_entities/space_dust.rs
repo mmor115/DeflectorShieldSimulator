@@ -64,11 +64,11 @@ pub struct SpaceDustId(Uuid);
 
 impl SpaceDustEntity {
     pub fn new_from_spawn(starting_position: Vec3,
-                      mesh: Res<SpaceDustMesh>,
-                      mat: Handle<ColorMaterial>,
-                      physics_manager: Res<PhysicsManager>,
-                      particle_settings: Res<ParticleSettings>,
-                      rng: ResMut<SeededRng>) -> Self {
+                          mesh: &Res<SpaceDustMesh>,
+                          mat: Handle<ColorMaterial>,
+                          physics_manager: &Res<PhysicsManager>,
+                          particle_settings: &Res<ParticleSettings>,
+                          rng: &mut ResMut<SeededRng>) -> Self {
         SpaceDustEntity(
             Mesh2d(mesh.0.clone()),
             MeshMaterial2d(mat),
@@ -101,9 +101,9 @@ impl SpaceDustEntity {
 }
 
 fn get_state_for_new_particle(particle_pos: Vec3,
-                              particle_settings: Res<ParticleSettings>,
-                              physics_manager: Res<PhysicsManager>,
-                              mut rng: ResMut<SeededRng>) -> SpaceDustPhysics {
+                              particle_settings: &Res<ParticleSettings>,
+                              physics_manager: &Res<PhysicsManager>,
+                              rng: &mut ResMut<SeededRng>) -> SpaceDustPhysics {
     physics_manager.new_particle_state(
         particle_pos.x as f64 / PHYSICS_SCALING_FACTOR,
         particle_pos.y as f64 / PHYSICS_SCALING_FACTOR,

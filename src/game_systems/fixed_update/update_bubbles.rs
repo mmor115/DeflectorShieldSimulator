@@ -2,7 +2,7 @@ use crate::game_entities::bubbles;
 use crate::game_entities::bubbles::{InnerBubble, OuterBubble};
 use crate::game_entities::ship::Ship;
 use crate::game_systems::timers::PhysicsUpdateTimer;
-use crate::game_systems::ui::{ShutdownState, UiState, VisualSettings};
+use crate::game_systems::ui::{PauseControls, ShutdownState, UiState, VisualSettings};
 use crate::physics::physics_manager::PhysicsManager;
 use crate::PHYSICS_SCALING_FACTOR;
 use bevy::asset::Assets;
@@ -15,7 +15,12 @@ pub fn update_bubbles(timer: Res<PhysicsUpdateTimer>,
                       mut meshes: ResMut<Assets<Mesh>>,
                       mut ui_state: ResMut<UiState>,
                       shutdown_state: Res<ShutdownState>,
-                      physics: Res<PhysicsManager>) {
+                      physics: Res<PhysicsManager>,
+                      pause_controls: Res<PauseControls>) {
+    if pause_controls.paused {
+        return;
+    }
+
     if !timer.just_finished() {
         return;
     }

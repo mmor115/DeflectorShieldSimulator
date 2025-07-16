@@ -3,7 +3,7 @@ use crate::game_entities::space_dust::{SpaceDust, SpaceDustId, SpaceDustPhysics}
 use crate::game_systems::config::GlobalConfig;
 use crate::game_systems::seeded_rng::SeededRng;
 use crate::game_systems::timers::PhysicsUpdateTimer;
-use crate::game_systems::ui::{ParticleSettings, ShutdownState, VisualSettings};
+use crate::game_systems::ui::{ParticleSettings, PauseControls, ShutdownState, VisualSettings};
 use crate::physics::physics_manager::PhysicsManager;
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
@@ -69,7 +69,12 @@ pub fn take_snapshot(timer: Res<PhysicsUpdateTimer>,
                      visual_settings: Res<VisualSettings>,
                      particle_settings: Res<ParticleSettings>,
                      shutdown_state: Res<ShutdownState>,
-                     seeded_rng: Res<SeededRng>) {
+                     seeded_rng: Res<SeededRng>,
+                     pause_controls: Res<PauseControls>) {
+    if pause_controls.paused {
+        return;
+    }
+
     if !timer.just_finished() {
         return;
     }

@@ -2,10 +2,16 @@ use crate::game_entities::ship::{Ship, ShipPhysics};
 use crate::game_systems::timers::PhysicsUpdateTimer;
 use crate::physics::physics_manager::PhysicsManager;
 use bevy::prelude::{Res, ResMut, Single, Transform, With};
+use crate::game_systems::ui::PauseControls;
 
 pub fn update_ship(timer: ResMut<PhysicsUpdateTimer>,
                    physics: Res<PhysicsManager>,
-                   ship: Single<(&mut Transform, &mut ShipPhysics), With<Ship>>) {
+                   ship: Single<(&mut Transform, &mut ShipPhysics), With<Ship>>,
+                   pause_controls: Res<PauseControls>) {
+    if pause_controls.paused {
+        return;
+    }
+
     if !timer.just_finished() {
         return;
     }

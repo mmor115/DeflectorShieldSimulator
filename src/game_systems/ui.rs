@@ -21,11 +21,13 @@ pub struct UiPlugin;
 impl Plugin for UiPlugin {
     fn build(&self, app: &mut App) {
         app.insert_resource(VisualSettings::default())
-           .insert_resource(ParticleSettings::default())
-           .insert_resource(UiState::default())
-           .insert_resource(ShutdownState::default())
-           .insert_resource(SaveLoadState::default())
-           .add_systems(PostUpdate, ui);
+            .insert_resource(ParticleSettings::default())
+            .insert_resource(UiState::default())
+            .insert_resource(ShutdownState::default())
+            .insert_resource(SaveLoadState::default())
+            .insert_resource(SpeedControls::default())
+            .insert_resource(PauseControls::default())
+            .add_systems(PostUpdate, ui);
     }
 }
 
@@ -64,6 +66,18 @@ pub struct ShutdownState {
 #[derive(Resource)]
 pub struct SaveLoadState {
     loaded_history: Option<SimulationHistory>
+}
+
+#[derive(Resource, Serialize, Deserialize, Clone)]
+pub struct SpeedControls {
+    pub tick_rate_factor: f32,
+    pub need_apply: bool,
+    pub keep_up_warning: bool
+}
+
+#[derive(Resource, Serialize, Deserialize, Clone)]
+pub struct PauseControls {
+    pub paused: bool
 }
 
 #[derive(PartialEq, Copy, Clone)]
@@ -161,6 +175,25 @@ impl Default for SaveLoadState {
     }
 }
 
+impl Default for SpeedControls {
+    fn default() -> Self {
+        Self {
+            tick_rate_factor: 1.,
+            need_apply: false,
+            keep_up_warning: false
+        }
+    }
+}
+
+impl Default for PauseControls {
+    fn default() -> Self {
+        Self {
+            paused: false
+        }
+    }
+}
+
+// hard cap of 16 args (¬▂¬)
 fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
       mut visual_settings: ResMut<VisualSettings>,
       mut particle_settings: ResMut<ParticleSettings>,
@@ -168,6 +201,7 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
       mut config_state: ResMut<SaveLoadState>,
       mut shutdown_state: ResMut<ShutdownState>,
       mut physics_manager: ResMut<PhysicsManager>,
+      controls: (ResMut<SpeedControls>, ResMut<PauseControls>),
       mut commands: Commands,
       ship_image_asset: Res<ShipImageAsset>,
       space_dust_mesh: Res<SpaceDustMesh>,
@@ -633,6 +667,36 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                             ui.close_current_popup();
                         }
                     });
+                }
+
+                let (mut speed_controls, mut pause_controls) = controls;
+
+                if let Some(_tab_item) = ui.tab_item("Speed") {
+                    let invert_paused = if pause_controls.paused {
+                        ui.button("Unpause")
+                    } else {
+                        ui.button("Pause")
+                    };
+
+                    if invert_paused {
+                        pause_controls.paused = !pause_controls.paused;
+                    }
+
+                    ui.same_line();
+
+                    if ui.button("Reset Speed") {
+                        speed_controls.tick_rate_factor = 1.;
+                    }
+
+                    if ui.slider("Simulation Speed", 0.1, 3., &mut speed_controls.tick_rate_factor) {
+                        speed_controls.need_apply = true;
+                    }
+
+                    if speed_controls.keep_up_warning {
+                        ui.tooltip(|| {
+                            ui.text_colored([1., 0.5, 0.5, 1.], "Can't keep up!");
+                        });
+                    }
                 }
             }
         });
