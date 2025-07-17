@@ -8,6 +8,7 @@ version = "0.1.0"
 dependencies = [
  "bevy",
  "bevy_mod_imgui",
+ "bevy_picking",
  "bincode",
  "deflector-core",
  "derive_more 2.0.1",
@@ -1997,6 +1998,7 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+ "unicode-xid",
 ]
 
 [[package]]

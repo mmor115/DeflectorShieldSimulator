@@ -5,16 +5,18 @@ use crate::PHYSICS_SCALING_FACTOR;
 use bevy::asset::{Assets, Handle};
 use bevy::color::Color;
 use bevy::math::{Vec2, Vec3};
-use bevy::prelude::{Bundle, ColorMaterial, Component, Deref, DerefMut, Mesh, Mesh2d, MeshMaterial2d, Res, ResMut, Resource, Transform};
+use bevy::prelude::*;
 use deflector_core::types::{ParticleState, ParticleStateComponents};
-use derive_more::From;
+use derive_more::{Display, From};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use uuid::Uuid;
 
+const DUST_DIAMETER: f32 = 1.;
+
 #[derive(Component)]
-#[require(Transform)]
+#[require(Transform, Pickable)]
 pub struct SpaceDust;
 
 #[derive(Component, Deref, DerefMut, Debug, Serialize, Deserialize, From, Clone)]
@@ -25,6 +27,15 @@ pub struct SpaceDustMesh(pub Handle<Mesh>);
 
 #[derive(Resource)]
 pub struct SpaceDustColorMaterials(HashMap<i64, Handle<ColorMaterial>>);
+
+#[derive(Resource, Deref)]
+pub struct TaggedSpaceDustMaterialAsset(pub Handle<ColorMaterial>);
+
+impl TaggedSpaceDustMaterialAsset {
+    pub fn new(mat: Handle<ColorMaterial>) -> Self {
+        Self(mat)
+    }
+}
 
 impl SpaceDustColorMaterials {
     pub fn new() -> Self {
@@ -59,8 +70,8 @@ impl SpaceDustColorMaterials {
 #[derive(Bundle)]
 pub struct SpaceDustEntity(Mesh2d, MeshMaterial2d<ColorMaterial>, Transform, SpaceDust, SpaceDustPhysics, SpaceDustId);
 
-#[derive(Component, From, Clone, Serialize, Deserialize)]
-pub struct SpaceDustId(Uuid);
+#[derive(Component, From, Clone, Copy, Serialize, Deserialize, Debug, Display, PartialEq, Eq, Hash)]
+pub struct SpaceDustId(pub Uuid);
 
 impl SpaceDustEntity {
     pub fn new_from_spawn(starting_position: Vec3,
@@ -68,22 +79,23 @@ impl SpaceDustEntity {
                           mat: Handle<ColorMaterial>,
                           physics_manager: &Res<PhysicsManager>,
                           particle_settings: &Res<ParticleSettings>,
-                          rng: &mut ResMut<SeededRng>) -> Self {
+                          rng: &mut ResMut<SeededRng>,
+                          id: SpaceDustId) -> Self {
         SpaceDustEntity(
             Mesh2d(mesh.0.clone()),
             MeshMaterial2d(mat),
             Transform::from_translation(starting_position).with_scale(Vec2::splat(DUST_DIAMETER).extend(1.)),
             SpaceDust,
             get_state_for_new_particle(starting_position, particle_settings, physics_manager, rng),
-            Uuid::new_v4().into()
+            id
         )
     }
 
     pub fn new_from_resume(mesh: &Res<SpaceDustMesh>,
-                       mut color_materials: &mut ResMut<Assets<ColorMaterial>>,
-                       space_dust_mats: &mut ResMut<SpaceDustColorMaterials>,
-                       state: SpaceDustPhysics,
-                       id: SpaceDustId) -> Self {
+                           mut color_materials: &mut ResMut<Assets<ColorMaterial>>,
+                           space_dust_mats: &mut ResMut<SpaceDustColorMaterials>,
+                           state: SpaceDustPhysics,
+                           id: SpaceDustId) -> Self {
         let mat = space_dust_mats.get_space_dust_color(
             &mut color_materials,
             state.z()
@@ -92,6 +104,20 @@ impl SpaceDustEntity {
         SpaceDustEntity(
             Mesh2d(mesh.0.clone()),
             MeshMaterial2d(mat),
+            Transform::from_translation(crate::physics_to_game(*state)).with_scale(Vec2::splat(DUST_DIAMETER).extend(1.)),
+            SpaceDust,
+            state,
+            id
+        )
+    }
+
+    pub fn new_tagged_from_resume(mesh: &Res<SpaceDustMesh>,
+                                  mat: &Res<TaggedSpaceDustMaterialAsset>,
+                                  state: SpaceDustPhysics,
+                                  id: SpaceDustId) -> Self {
+        SpaceDustEntity(
+            Mesh2d(mesh.0.clone()),
+            MeshMaterial2d(mat.0.clone()),
             Transform::from_translation(crate::physics_to_game(*state)).with_scale(Vec2::splat(DUST_DIAMETER).extend(1.)),
             SpaceDust,
             state,
@@ -113,5 +139,3 @@ fn get_state_for_new_particle(particle_pos: Vec3,
         rng.random_range(-particle_settings.z_velocity_variance ..= particle_settings.z_velocity_variance)
     ).into()
 }
-
-const DUST_DIAMETER: f32 = 1.;

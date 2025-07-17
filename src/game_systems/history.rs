@@ -7,6 +7,7 @@ use crate::game_systems::ui::{ParticleSettings, PauseControls, ShutdownState, Vi
 use crate::physics::physics_manager::PhysicsManager;
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
+use crate::game_systems::tagging::TaggedParticles;
 
 pub struct HistoryPlugin;
 
@@ -18,13 +19,16 @@ impl Plugin for HistoryPlugin {
 
 #[derive(Resource, Serialize, Deserialize, Clone)]
 pub struct SimulationHistory {
-    pub snapshots: Vec<GlobalSnapshot>
+    pub snapshots: Vec<GlobalSnapshot>,
+    #[serde(default)]
+    pub tagged_particles: TaggedParticles
 }
 
 impl SimulationHistory {
     fn new() -> Self {
         SimulationHistory {
-            snapshots: Vec::new()
+            snapshots: Vec::new(),
+            tagged_particles: TaggedParticles::new()
         }
     }
 
@@ -36,7 +40,8 @@ impl SimulationHistory {
         };
 
         SimulationHistory {
-            snapshots
+            snapshots,
+            tagged_particles: self.tagged_particles.clone()
         }
     }
 }

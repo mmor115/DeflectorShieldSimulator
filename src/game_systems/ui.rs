@@ -1,5 +1,5 @@
 use crate::game_entities::ship::{Ship, ShipEntity, ShipImageAsset, ShipPhysics};
-use crate::game_entities::space_dust::{SpaceDust, SpaceDustColorMaterials, SpaceDustEntity, SpaceDustMesh};
+use crate::game_entities::space_dust::{SpaceDust, SpaceDustColorMaterials, SpaceDustEntity, SpaceDustMesh, TaggedSpaceDustMaterialAsset};
 use crate::game_systems::config::GlobalConfig;
 use crate::game_systems::history::SimulationHistory;
 use crate::physics::physics_manager::PhysicsManager;
@@ -15,6 +15,8 @@ use std::fs;
 use std::fs::OpenOptions;
 use std::io::{BufReader, BufWriter, Write};
 use std::path::Path;
+use crate::game_systems::fixed_update::space_dust_click_observer::space_dust_click_observer;
+use crate::game_systems::tagging::TaggedParticles;
 
 pub struct UiPlugin;
 
@@ -195,13 +197,9 @@ impl Default for PauseControls {
 
 // hard cap of 16 args (¬▂¬)
 fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
-      mut visual_settings: ResMut<VisualSettings>,
-      mut particle_settings: ResMut<ParticleSettings>,
-      mut ui_state: ResMut<UiState>,
-      mut config_state: ResMut<SaveLoadState>,
-      mut shutdown_state: ResMut<ShutdownState>,
-      mut physics_manager: ResMut<PhysicsManager>,
+      config_states: (ResMut<VisualSettings>, ResMut<ParticleSettings>, ResMut<UiState>, ResMut<SaveLoadState>, ResMut<ShutdownState>),
       controls: (ResMut<SpeedControls>, ResMut<PauseControls>),
+      mut physics_manager: ResMut<PhysicsManager>,
       mut commands: Commands,
       ship_image_asset: Res<ShipImageAsset>,
       space_dust_mesh: Res<SpaceDustMesh>,
@@ -209,8 +207,18 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
       mut space_dust_mats: ResMut<SpaceDustColorMaterials>,
       mut history: ResMut<SimulationHistory>,
       ship: Single<(Entity, &mut Transform, &mut ShipPhysics), With<Ship>>,
-      particles: Query<Entity, (With<SpaceDust>, Without<Ship>)>) {
+      particles: Query<Entity, (With<SpaceDust>, Without<Ship>)>,
+      mut tagged_particles: ResMut<TaggedParticles>,
+      tagged_mat: Res<TaggedSpaceDustMaterialAsset>) {
     let ui = imgui_ctx.ui();
+
+    let (
+        mut visual_settings,
+        mut particle_settings,
+        mut ui_state,
+        mut config_state,
+        mut shutdown_state
+    ) = config_states;
 
     let _window = ui
         .window("Parameters")
@@ -453,6 +461,7 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                     }
 
                     if dump_checkpoint || dump_history {
+                        history.tagged_particles = tagged_particles.clone();
                         match ui_state.history_format {
                             HistoryFormat::Json => {
                                 let path = if ui_state.history_path_buf.is_empty() {
@@ -639,18 +648,33 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                                         )
                                     );
 
+                                    *tagged_particles = loaded_history.tagged_particles.clone();
+
                                     let particles_batch = snapshot.particle_states.clone();
                                     let particles_batch = particles_batch.into_iter().map(|s| {
-                                        SpaceDustEntity::new_from_resume(
-                                            &space_dust_mesh,
-                                            &mut color_materials,
-                                            &mut space_dust_mats,
-                                            s.physics,
-                                            s.id
-                                        )
+                                        if tagged_particles.is_tagged(&s.id) {
+                                            SpaceDustEntity::new_tagged_from_resume(
+                                                &space_dust_mesh,
+                                                &tagged_mat,
+                                                s.physics,
+                                                s.id
+                                            )
+                                        } else {
+                                            SpaceDustEntity::new_from_resume(
+                                                &space_dust_mesh,
+                                                &mut color_materials,
+                                                &mut space_dust_mats,
+                                                s.physics,
+                                                s.id
+                                            )
+                                        }
                                     }).collect::<Vec<_>>();
 
-                                    commands.spawn_batch(particles_batch);
+                                    //commands.spawn_batch(particles_batch);
+
+                                    for p in particles_batch {
+                                        commands.spawn(p).observe(space_dust_click_observer);
+                                    }
 
                                     *history = loaded_history.clone();
                                 }

@@ -1,5 +1,5 @@
 use crate::game_entities::ship::Ship;
-use crate::game_entities::space_dust::{SpaceDustColorMaterials, SpaceDustEntity, SpaceDustMesh};
+use crate::game_entities::space_dust::{SpaceDustColorMaterials, SpaceDustEntity, SpaceDustId, SpaceDustMesh, TaggedSpaceDustMaterialAsset};
 use crate::game_systems::seeded_rng::SeededRng;
 use crate::game_systems::timers::SpaceDustSpawnTimer;
 use crate::game_systems::ui::{ParticleSettings, PauseControls, ShutdownState};
@@ -9,6 +9,8 @@ use bevy::asset::Assets;
 use bevy::math::Vec3;
 use bevy::prelude::{ColorMaterial, Commands, Res, ResMut, Single, Time, Transform, With};
 use rand::Rng;
+use crate::game_systems::fixed_update::space_dust_click_observer::space_dust_click_observer;
+use crate::game_systems::tagging::TaggedParticles;
 
 const DUST_SPAWN_LEAD: f32 = 275.;
 
@@ -23,7 +25,9 @@ pub fn spawn_space_dust(time: Res<Time>,
                         ship_transform: Single<&Transform, With<Ship>>,
                         particle_settings: Res<ParticleSettings>,
                         shutdown_state: Res<ShutdownState>,
-                        pause_controls: Res<PauseControls>) {
+                        pause_controls: Res<PauseControls>,
+                        tagged_particles: Res<TaggedParticles>,
+                        tagged_space_dust_material_asset: Res<TaggedSpaceDustMaterialAsset>) {
     if pause_controls.paused {
         return;
     }
@@ -45,10 +49,17 @@ pub fn spawn_space_dust(time: Res<Time>,
         rng.random_range(-z_position_variance..=z_position_variance),
     );
 
-    let mat = space_dust_mats.get_space_dust_color(
-        &mut materials,
-        pos.z as f64 / PHYSICS_SCALING_FACTOR,
-    );
+    let id = SpaceDustId(uuid::Builder::from_random_bytes(rng.random()).into_uuid());
 
-    commands.spawn(SpaceDustEntity::new_from_spawn(pos, &mesh, mat, &physics_manager, &particle_settings, &mut rng));
+    let mat = if tagged_particles.is_tagged(&id) {
+        tagged_space_dust_material_asset.0.clone()
+    } else {
+        space_dust_mats.get_space_dust_color(
+            &mut materials,
+            pos.z as f64 / PHYSICS_SCALING_FACTOR,
+        )
+    };
+
+    commands.spawn(SpaceDustEntity::new_from_spawn(pos, &mesh, mat, &physics_manager, &particle_settings, &mut rng, id))
+        .observe(space_dust_click_observer);
 }

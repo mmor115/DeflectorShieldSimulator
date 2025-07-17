@@ -1,6 +1,6 @@
 use crate::game_entities::bubbles::{InnerBubble, OuterBubble};
 use crate::game_entities::ship::{ShipEntity, ShipImageAsset, ShipPhysics};
-use crate::game_entities::space_dust::{SpaceDustColorMaterials, SpaceDustMesh};
+use crate::game_entities::space_dust::{SpaceDustColorMaterials, SpaceDustMesh, TaggedSpaceDustMaterialAsset};
 use crate::physics::physics_manager::PhysicsManager;
 use crate::physics::physics_parameters::PhysicsParameters;
 use crate::{game_entities, PHYSICS_STEP_SIZE};
@@ -10,6 +10,8 @@ use bevy::prelude::*;
 
 const INNER_BUBBLE_COLOR: Color = Color::srgb(0.0, 0.5, 1.0);
 const OUTER_BUBBLE_COLOR: Color = Color::srgb(0.0, 0.0, 1.0);
+
+const TAGGED_PARTICLE_COLOR: Color = Color::srgb(255., 0., 255.);
 
 const INITIAL_SHIP_POS: Vec3 = Vec3::new(0., 0., 0.);
 
@@ -31,6 +33,7 @@ pub fn setup(mut commands: Commands,
     commands.insert_resource(SpaceDustMesh(space_dust_mesh));
 
     commands.insert_resource(SpaceDustColorMaterials::new());
+    commands.insert_resource(TaggedSpaceDustMaterialAsset::new(materials.add(TAGGED_PARTICLE_COLOR)));
 
     let physics_manager = PhysicsManager::new(
         PhysicsParameters::default(),

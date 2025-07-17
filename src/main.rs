@@ -5,13 +5,15 @@ mod game_entities;
 use bevy::prelude::*;
 use bevy_mod_imgui::prelude::*;
 use deflector_core::types::{ParticleState, ParticleStateComponents};
-use game_systems::fixed_update::{post_update_physics, pre_update_physics, spawn_space_dust, update_bubbles, update_ship, update_space_dust};
-use game_systems::frame_update::pan_camera::pan_camera;
+use game_systems::fixed_update::*;
+use game_systems::frame_update::*;
 use game_systems::history::{take_snapshot, HistoryPlugin};
 use game_systems::seeded_rng::SeededRngPlugin;
 use game_systems::setup;
+use game_systems::tagging::TaggingPlugin;
 use game_systems::timers::{PhysicsUpdateTimer, SpaceDustSpawnTimer};
 use game_systems::ui::UiPlugin;
+use pan_camera::pan_camera;
 use post_update_physics::post_update_physics;
 use pre_update_physics::pre_update_physics;
 use setup::setup;
@@ -28,6 +30,7 @@ fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugins(ImguiPlugin::default())
+        .add_plugins(MeshPickingPlugin)
         .add_systems(Startup, setup)
         .insert_resource(Time::<Fixed>::from_hz(200.0))
         .insert_resource(SpaceDustSpawnTimer::default())
@@ -47,6 +50,7 @@ fn main() {
         .add_plugins(UiPlugin)
         .add_plugins(SeededRngPlugin)
         .add_plugins(HistoryPlugin)
+        .add_plugins(TaggingPlugin)
         .run();
 }
 
