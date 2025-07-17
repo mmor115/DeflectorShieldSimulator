@@ -37,6 +37,7 @@ impl Plugin for UiPlugin {
 pub struct VisualSettings {
     pub show_inner_bubble: bool,
     pub show_outer_bubble: bool,
+    pub hide_untagged_particles: bool
 }
 
 #[derive(Resource, Serialize, Deserialize, Clone)]
@@ -142,6 +143,7 @@ impl Default for VisualSettings {
         Self {
             show_inner_bubble: true,
             show_outer_bubble: true,
+            hide_untagged_particles: false
         }
     }
 }
@@ -358,6 +360,7 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                 if let Some(_tab_item) = ui.tab_item("Visuals") {
                     ui.checkbox("Draw inner shield", &mut visual_settings.show_inner_bubble);
                     ui.checkbox("Draw outer shield", &mut visual_settings.show_outer_bubble);
+                    ui.checkbox("Hide untagged particles", &mut visual_settings.hide_untagged_particles);
                 }
                 
                 if let Some(_tab_item) = ui.tab_item("Save & Load") {

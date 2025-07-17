@@ -16,7 +16,7 @@ use uuid::Uuid;
 const DUST_DIAMETER: f32 = 1.;
 
 #[derive(Component)]
-#[require(Transform, Pickable)]
+#[require(Transform, Pickable, Visibility)]
 pub struct SpaceDust;
 
 #[derive(Component, Deref, DerefMut, Debug, Serialize, Deserialize, From, Clone)]
