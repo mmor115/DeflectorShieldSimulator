@@ -15,7 +15,7 @@ const TAGGED_PARTICLE_COLOR: Color = Color::srgb(255., 0., 255.);
 
 const INITIAL_SHIP_POS: Vec3 = Vec3::new(0., 0., 0.);
 
-const CAMERA_ZOOM: f32 = 2.5;
+pub const CAMERA_ZOOM: f32 = 2.5;
 
 pub fn setup(mut commands: Commands,
              mut meshes: ResMut<Assets<Mesh>>,

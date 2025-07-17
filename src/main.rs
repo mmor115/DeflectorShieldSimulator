@@ -5,7 +5,9 @@ mod game_entities;
 use bevy::prelude::*;
 use bevy_mod_imgui::prelude::*;
 use deflector_core::types::{ParticleState, ParticleStateComponents};
+use game_systems::camera_control::CameraControlPlugin;
 use game_systems::fixed_update::*;
+use game_systems::frame_update::handle_space_bar::handle_space_bar;
 use game_systems::frame_update::*;
 use game_systems::history::{take_snapshot, HistoryPlugin};
 use game_systems::seeded_rng::SeededRngPlugin;
@@ -35,7 +37,7 @@ fn main() {
         .insert_resource(Time::<Fixed>::from_hz(200.0))
         .insert_resource(SpaceDustSpawnTimer::default())
         .insert_resource(PhysicsUpdateTimer::default())
-        .add_systems(Update, pan_camera)
+        .add_systems(Update, (pan_camera, handle_space_bar))
         .add_systems(
             FixedUpdate, (
                 pre_update_physics,
@@ -51,6 +53,7 @@ fn main() {
         .add_plugins(SeededRngPlugin)
         .add_plugins(HistoryPlugin)
         .add_plugins(TaggingPlugin)
+        .add_plugins(CameraControlPlugin)
         .run();
 }
 
