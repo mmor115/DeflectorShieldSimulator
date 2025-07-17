@@ -1,17 +1,15 @@
-use bevy::input::ButtonState;
-use bevy::input::mouse::{MouseButtonInput, MouseMotion, MouseScrollUnit, MouseWheel};
 use crate::game_entities::ship::Ship;
-use bevy::prelude::*;
-use bevy::window::PrimaryWindow;
 use crate::game_systems::camera_control::CameraControls;
 use crate::game_systems::setup::CAMERA_ZOOM;
+use bevy::input::mouse::{MouseButtonInput, MouseMotion, MouseScrollUnit, MouseWheel};
+use bevy::input::ButtonState;
+use bevy::prelude::*;
 
 pub fn pan_camera(mut camera2d: Single<&mut Transform, (With<Camera2d>, Without<Ship>)>,
                   ship: Single<&Transform, With<Ship>>,
                   mut scroll_events: EventReader<MouseWheel>,
                   mut mouse_motion_events: EventReader<MouseMotion>,
                   mut mouse_button_events: EventReader<MouseButtonInput>,
-                  window: Single<&Window, With<PrimaryWindow>>,
                   mut camera_controls: ResMut<CameraControls>) {
     for event in scroll_events.read() {
         match event.unit {

@@ -37,6 +37,7 @@ impl Plugin for UiPlugin {
 pub struct VisualSettings {
     pub show_inner_bubble: bool,
     pub show_outer_bubble: bool,
+    #[serde(default)]
     pub hide_untagged_particles: bool
 }
 

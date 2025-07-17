@@ -58,10 +58,13 @@ fn main() {
 }
 
 fn physics_to_game(particle_pos: ParticleState<f64>) -> Vec3 {
+    /* In 2d, the z coordinate is only used for ordering. We do want the physical z coordinate
+       to influence this, but scaling by PHYSICS_SCALING_FACTOR causes weird frustum culling
+       behavior at very high zoom factors. */
     Vec3::new(
         (PHYSICS_SCALING_FACTOR * particle_pos.x()) as f32,
         (PHYSICS_SCALING_FACTOR * particle_pos.y()) as f32,
-        (PHYSICS_SCALING_FACTOR * particle_pos.z()) as f32,
+        particle_pos.z() as f32
     )
 }
 
