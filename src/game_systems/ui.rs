@@ -364,6 +364,8 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                 }
                 
                 if let Some(_tab_item) = ui.tab_item("Save & Load") {
+                    ui.text("Config");
+
                     ui.input_text("Config Path", &mut ui_state.config_path_buf)
                         .hint("sim.json")
                         .build();
@@ -426,6 +428,9 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                     }
 
                     ui.separator();
+                    ui.text("Live History");
+
+                    ui.text(format!("Checkpoints: {}", history.snapshots.len()));
 
                     let path_hint = match ui_state.history_format {
                         HistoryFormat::Json => "dump.json",
@@ -461,6 +466,12 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                         if ui.is_item_hovered() {
                             ui.tooltip_text("This can be very slow and produce very large files!");
                         }
+                    }
+
+                    ui.same_line();
+
+                    if ui.button("Trim History") {
+                        history.trim();
                     }
 
                     if dump_checkpoint || dump_history {
@@ -593,6 +604,8 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
 
                     ui.separator();
 
+                    ui.text("Loaded History");
+
                     match &config_state.loaded_history {
                         Some(loaded_history) => {
                             let snapshots_len = loaded_history.snapshots.len();
@@ -679,7 +692,7 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                                         commands.spawn(p).observe(space_dust_click_observer);
                                     }
 
-                                    *history = loaded_history.clone();
+                                    *history = loaded_history.truncated(load_idx);
                                 }
                             }
                         }

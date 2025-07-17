@@ -25,7 +25,7 @@ pub struct SimulationHistory {
 }
 
 impl SimulationHistory {
-    fn new() -> Self {
+    pub fn new() -> Self {
         SimulationHistory {
             snapshots: Vec::new(),
             tagged_particles: TaggedParticles::new()
@@ -41,6 +41,19 @@ impl SimulationHistory {
 
         SimulationHistory {
             snapshots,
+            tagged_particles: self.tagged_particles.clone()
+        }
+    }
+
+    pub fn trim(&mut self) {
+        if let Some(snapshot) = self.snapshots.pop() {
+            self.snapshots = vec![snapshot];
+        }
+    }
+
+    pub fn truncated(&self, last_idx: usize) -> Self {
+        SimulationHistory {
+            snapshots: self.snapshots[..=last_idx].to_owned(),
             tagged_particles: self.tagged_particles.clone()
         }
     }
