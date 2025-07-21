@@ -1,6 +1,7 @@
 mod game_systems;
 mod physics;
 mod game_entities;
+mod util;
 
 use bevy::prelude::*;
 use bevy_mod_imgui::prelude::*;

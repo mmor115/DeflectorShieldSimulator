@@ -481,7 +481,7 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
 
                     if dump_checkpoint || dump_history {
                         let mut history = if dump_checkpoint {
-                            history.borrow_checkpoint()
+                            history.checkpoint()
                         } else {
                             history.as_borrowed()
                         };

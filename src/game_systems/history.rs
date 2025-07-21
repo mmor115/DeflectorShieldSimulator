@@ -8,6 +8,7 @@ use crate::game_systems::ui::{ParticleSettings, PauseControls, ShutdownState, Vi
 use crate::physics::physics_manager::PhysicsManager;
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
+use crate::util::bull::Bull;
 
 pub struct HistoryPlugin;
 
@@ -32,32 +33,19 @@ impl SimulationHistory {
         }
     }
 
-    pub fn checkpoint(&self) -> Self {
-        let snapshots= if self.snapshots.is_empty() {
-            vec![]
-        } else {
-            vec![self.snapshots[self.snapshots.len() - 1].clone()]
-        };
-
-        SimulationHistory {
-            snapshots,
-            tagged_particles: self.tagged_particles.clone()
-        }
-    }
-
     pub fn as_borrowed(&self) -> BorrowedSimulationHistory {
         self.into()
     }
 
-    pub fn borrow_checkpoint(&self) -> BorrowedSimulationHistory {
-        let snapshots= if self.snapshots.is_empty() {
+    pub fn checkpoint(&self) -> BorrowedSimulationHistory {
+        let snapshots = if self.snapshots.is_empty() {
             vec![]
         } else {
             vec![(&self.snapshots[self.snapshots.len() - 1]).into()]
         };
 
         BorrowedSimulationHistory {
-            snapshots,
+            snapshots: Bull::InnerBorrowed(snapshots),
             tagged_particles: &self.tagged_particles
         }
     }
@@ -71,25 +59,6 @@ impl SimulationHistory {
     pub fn truncated(&self, last_idx: usize) -> Self {
         SimulationHistory {
             snapshots: self.snapshots[..=last_idx].to_owned(),
-            tagged_particles: self.tagged_particles.clone()
-        }
-    }
-
-    pub fn tagged_only(&self) -> Self {
-        let tagged_particles = &self.tagged_particles;
-
-        SimulationHistory {
-            snapshots: self.snapshots.iter().map(|s| GlobalSnapshot {
-                global_config: s.global_config.clone(),
-                global_time: s.global_time,
-                seeded_rng: s.seeded_rng.clone(),
-                ship_state: s.ship_state.clone(),
-                particle_states: s.particle_states
-                                  .iter()
-                                  .filter(|p| tagged_particles.is_tagged(&p.id))
-                                  .map(|p| p.clone())
-                                  .collect(),
-            }).collect(),
             tagged_particles: self.tagged_particles.clone()
         }
     }
@@ -166,7 +135,7 @@ pub fn take_snapshot(timer: Res<PhysicsUpdateTimer>,
 
 #[derive(Serialize)]
 pub struct BorrowedSimulationHistory<'a> {
-    pub snapshots: Vec<BorrowedGlobalSnapshot<'a>>,
+    pub snapshots: Bull<'a, GlobalSnapshot, BorrowedGlobalSnapshot<'a>>,
     #[serde(default)]
     pub tagged_particles: &'a TaggedParticles
 }
@@ -174,7 +143,7 @@ pub struct BorrowedSimulationHistory<'a> {
 impl <'a> From<&'a SimulationHistory> for BorrowedSimulationHistory<'a> {
     fn from(value: &'a SimulationHistory) -> Self {
         Self {
-            snapshots: value.snapshots.iter().map(|s| s.into()).collect(),
+            snapshots: Bull::OuterBorrowed(&value.snapshots),
             tagged_particles: &value.tagged_particles,
         }
     }
@@ -185,29 +154,32 @@ impl <'a> BorrowedSimulationHistory<'a> {
         let tagged_particles = self.tagged_particles;
 
         BorrowedSimulationHistory {
-            snapshots: self.snapshots.iter().map(|s| BorrowedGlobalSnapshot {
-                global_config: s.global_config,
-                global_time: s.global_time,
-                seeded_rng: s.seeded_rng,
-                ship_state: s.ship_state,
-                particle_states: s.particle_states
-                                  .iter()
-                                  .filter(|p| tagged_particles.is_tagged(&p.id))
-                                  .map(|p| *p)
-                                  .collect(),
-            }).collect(),
-            tagged_particles: self.tagged_particles
+            snapshots: Bull::InnerBorrowed(
+                self.snapshots.as_owned_vec().iter().map(|s| {
+                    let mut particle_states = s.particle_states.as_owned_vec();
+                    particle_states.retain(|p| tagged_particles.is_tagged(&p.id));
+
+                    BorrowedGlobalSnapshot {
+                        global_config: s.global_config,
+                        global_time: s.global_time,
+                        seeded_rng: s.seeded_rng,
+                        ship_state: s.ship_state,
+                        particle_states: Bull::InnerBorrowed(particle_states)
+                    }
+                }).collect()
+            ),
+            tagged_particles
         }
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Clone)]
 pub struct BorrowedGlobalSnapshot<'a> {
     pub global_config: &'a GlobalConfig,
     pub global_time: f64,
     pub seeded_rng: &'a SeededRng,
     pub ship_state: &'a ShipStateSnapshot,
-    pub particle_states: Vec<&'a SpaceDustStateSnapshot>
+    pub particle_states: Bull<'a, SpaceDustStateSnapshot, &'a SpaceDustStateSnapshot>
 }
 
 impl <'a> From<&'a GlobalSnapshot> for BorrowedGlobalSnapshot<'a> {
@@ -217,7 +189,7 @@ impl <'a> From<&'a GlobalSnapshot> for BorrowedGlobalSnapshot<'a> {
             global_time: value.global_time,
             seeded_rng: &value.seeded_rng,
             ship_state: &value.ship_state,
-            particle_states: value.particle_states.iter().collect(),
+            particle_states: Bull::OuterBorrowed(&value.particle_states),
         }
     }
 }
