@@ -2,12 +2,12 @@ use crate::game_entities::ship::{Ship, ShipPhysics};
 use crate::game_entities::space_dust::{SpaceDust, SpaceDustId, SpaceDustPhysics};
 use crate::game_systems::config::GlobalConfig;
 use crate::game_systems::seeded_rng::SeededRng;
+use crate::game_systems::tagging::TaggedParticles;
 use crate::game_systems::timers::PhysicsUpdateTimer;
 use crate::game_systems::ui::{ParticleSettings, PauseControls, ShutdownState, VisualSettings};
 use crate::physics::physics_manager::PhysicsManager;
 use bevy::prelude::*;
 use serde::{Deserialize, Serialize};
-use crate::game_systems::tagging::TaggedParticles;
 
 pub struct HistoryPlugin;
 
@@ -45,6 +45,23 @@ impl SimulationHistory {
         }
     }
 
+    pub fn as_borrowed(&self) -> BorrowedSimulationHistory {
+        self.into()
+    }
+
+    pub fn borrow_checkpoint(&self) -> BorrowedSimulationHistory {
+        let snapshots= if self.snapshots.is_empty() {
+            vec![]
+        } else {
+            vec![(&self.snapshots[self.snapshots.len() - 1]).into()]
+        };
+
+        BorrowedSimulationHistory {
+            snapshots,
+            tagged_particles: &self.tagged_particles
+        }
+    }
+
     pub fn trim(&mut self) {
         if let Some(snapshot) = self.snapshots.pop() {
             self.snapshots = vec![snapshot];
@@ -54,6 +71,25 @@ impl SimulationHistory {
     pub fn truncated(&self, last_idx: usize) -> Self {
         SimulationHistory {
             snapshots: self.snapshots[..=last_idx].to_owned(),
+            tagged_particles: self.tagged_particles.clone()
+        }
+    }
+
+    pub fn tagged_only(&self) -> Self {
+        let tagged_particles = &self.tagged_particles;
+
+        SimulationHistory {
+            snapshots: self.snapshots.iter().map(|s| GlobalSnapshot {
+                global_config: s.global_config.clone(),
+                global_time: s.global_time,
+                seeded_rng: s.seeded_rng.clone(),
+                ship_state: s.ship_state.clone(),
+                particle_states: s.particle_states
+                                  .iter()
+                                  .filter(|p| tagged_particles.is_tagged(&p.id))
+                                  .map(|p| p.clone())
+                                  .collect(),
+            }).collect(),
             tagged_particles: self.tagged_particles.clone()
         }
     }
@@ -126,4 +162,62 @@ pub fn take_snapshot(timer: Res<PhysicsUpdateTimer>,
         ship_state,
         particle_states
     });
+}
+
+#[derive(Serialize)]
+pub struct BorrowedSimulationHistory<'a> {
+    pub snapshots: Vec<BorrowedGlobalSnapshot<'a>>,
+    #[serde(default)]
+    pub tagged_particles: &'a TaggedParticles
+}
+
+impl <'a> From<&'a SimulationHistory> for BorrowedSimulationHistory<'a> {
+    fn from(value: &'a SimulationHistory) -> Self {
+        Self {
+            snapshots: value.snapshots.iter().map(|s| s.into()).collect(),
+            tagged_particles: &value.tagged_particles,
+        }
+    }
+}
+
+impl <'a> BorrowedSimulationHistory<'a> {
+    pub fn tagged_only(&self) -> Self {
+        let tagged_particles = self.tagged_particles;
+
+        BorrowedSimulationHistory {
+            snapshots: self.snapshots.iter().map(|s| BorrowedGlobalSnapshot {
+                global_config: s.global_config,
+                global_time: s.global_time,
+                seeded_rng: s.seeded_rng,
+                ship_state: s.ship_state,
+                particle_states: s.particle_states
+                                  .iter()
+                                  .filter(|p| tagged_particles.is_tagged(&p.id))
+                                  .map(|p| *p)
+                                  .collect(),
+            }).collect(),
+            tagged_particles: self.tagged_particles
+        }
+    }
+}
+
+#[derive(Serialize)]
+pub struct BorrowedGlobalSnapshot<'a> {
+    pub global_config: &'a GlobalConfig,
+    pub global_time: f64,
+    pub seeded_rng: &'a SeededRng,
+    pub ship_state: &'a ShipStateSnapshot,
+    pub particle_states: Vec<&'a SpaceDustStateSnapshot>
+}
+
+impl <'a> From<&'a GlobalSnapshot> for BorrowedGlobalSnapshot<'a> {
+    fn from(value: &'a GlobalSnapshot) -> Self {
+        Self {
+            global_config: &value.global_config,
+            global_time: value.global_time,
+            seeded_rng: &value.seeded_rng,
+            ship_state: &value.ship_state,
+            particle_states: value.particle_states.iter().collect(),
+        }
+    }
 }

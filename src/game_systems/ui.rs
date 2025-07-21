@@ -1,7 +1,9 @@
 use crate::game_entities::ship::{Ship, ShipEntity, ShipImageAsset, ShipPhysics};
 use crate::game_entities::space_dust::{SpaceDust, SpaceDustColorMaterials, SpaceDustEntity, SpaceDustMesh, TaggedSpaceDustMaterialAsset};
 use crate::game_systems::config::GlobalConfig;
+use crate::game_systems::fixed_update::space_dust_click_observer::space_dust_click_observer;
 use crate::game_systems::history::SimulationHistory;
+use crate::game_systems::tagging::TaggedParticles;
 use crate::physics::physics_manager::PhysicsManager;
 use crate::physics::physics_parameters::PhysicsParameters;
 use crate::physics_to_game;
@@ -15,8 +17,6 @@ use std::fs;
 use std::fs::OpenOptions;
 use std::io::{BufReader, BufWriter, Write};
 use std::path::Path;
-use crate::game_systems::fixed_update::space_dust_click_observer::space_dust_click_observer;
-use crate::game_systems::tagging::TaggedParticles;
 
 pub struct UiPlugin;
 
@@ -58,7 +58,8 @@ pub struct UiState {
     history_path_buf: String,
     history_format: HistoryFormat,
     err_text: String,
-    resume_idx_buf: usize
+    resume_idx_buf: usize,
+    dump_only_tagged_particles: bool
 }
 
 #[derive(Resource)]
@@ -158,7 +159,8 @@ impl Default for UiState {
             history_path_buf: String::new(),
             err_text: String::new(),
             history_format: HistoryFormat::Bin,
-            resume_idx_buf: 0
+            resume_idx_buf: 0,
+            dump_only_tagged_particles: false
         }
     }
 }
@@ -456,6 +458,8 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                         ui.tooltip_text("Slow. Produces large, human-readable files.");
                     }
 
+                    ui.checkbox("Dump only tagged particles", &mut ui_state.dump_only_tagged_particles);
+
                     let dump_checkpoint = ui.button("Dump Single Checkpoint");
 
                     ui.same_line();
@@ -476,7 +480,17 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                     }
 
                     if dump_checkpoint || dump_history {
-                        history.tagged_particles = tagged_particles.clone();
+                        let mut history = if dump_checkpoint {
+                            history.borrow_checkpoint()
+                        } else {
+                            history.as_borrowed()
+                        };
+                        history.tagged_particles = &tagged_particles;
+
+                        if ui_state.dump_only_tagged_particles {
+                            history = history.tagged_only();
+                        }
+
                         match ui_state.history_format {
                             HistoryFormat::Json => {
                                 let path = if ui_state.history_path_buf.is_empty() {
@@ -485,11 +499,7 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                                     Path::new(&ui_state.history_path_buf)
                                 };
 
-                                let dump = if dump_checkpoint {
-                                    serde_json::to_string_pretty(&history.checkpoint()).unwrap()
-                                } else {
-                                    serde_json::to_string_pretty(history.as_ref()).unwrap()
-                                };
+                                let dump = serde_json::to_string_pretty(&history).unwrap();
 
                                 if let Err(e) = fs::write(path, dump) {
                                     ui_state.err_text = format!("Failed to dump: {}", e);
@@ -512,11 +522,8 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                                     Ok(file) => {
                                         let mut writer = BufWriter::new(file);
 
-                                        let dump_result = if dump_checkpoint {
-                                            bincode::serde::encode_into_std_write(&history.checkpoint(), &mut writer, bincode::config::standard())
-                                        } else {
-                                            bincode::serde::encode_into_std_write(history.as_ref(), &mut writer, bincode::config::standard())
-                                        };
+                                        let dump_result =
+                                            bincode::serde::encode_into_std_write(&history, &mut writer, bincode::config::standard());
 
                                         if let Err(e) = dump_result {
                                             ui_state.err_text = format!("Failed to dump: {}", e);
@@ -536,6 +543,10 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                             }
                         }
                     }
+
+                    ui.separator();
+
+                    ui.text("Loaded History");
 
                     if ui.button("Load History") {
                         match ui_state.history_format {
@@ -602,10 +613,6 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                     if ui.button("Unload History") {
                         config_state.loaded_history = None;
                     }
-
-                    ui.separator();
-
-                    ui.text("Loaded History");
 
                     match &config_state.loaded_history {
                         Some(loaded_history) => {
