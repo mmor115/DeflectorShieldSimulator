@@ -7,6 +7,7 @@ use bevy::prelude::*;
 use bevy_mod_imgui::prelude::*;
 use deflector_core::types::{ParticleState, ParticleStateComponents};
 use game_systems::camera_control::CameraControlPlugin;
+use game_systems::fixed_update::validators::*;
 use game_systems::fixed_update::*;
 use game_systems::frame_update::handle_space_bar::handle_space_bar;
 use game_systems::frame_update::*;
@@ -46,6 +47,10 @@ fn main() {
                 update_bubbles,
                 spawn_space_dust,
                 update_space_dust,
+                (
+                    nan_validator.run_if(nan_validator_predicate),
+                    normalization_validator.run_if(normalization_validator_predicate)
+                ),
                 take_snapshot,
                 post_update_physics
             ).chain(),

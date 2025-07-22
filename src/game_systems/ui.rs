@@ -29,6 +29,7 @@ impl Plugin for UiPlugin {
             .insert_resource(SaveLoadState::default())
             .insert_resource(SpeedControls::default())
             .insert_resource(PauseControls::default())
+            .insert_resource(ValidatorSettings::default())
             .add_systems(PostUpdate, ui);
     }
 }
@@ -84,6 +85,13 @@ pub struct SpeedControls {
 #[derive(Resource, Serialize, Deserialize, Clone)]
 pub struct PauseControls {
     pub paused: bool
+}
+
+#[derive(Resource)]
+pub struct ValidatorSettings {
+    pub check_nan: bool,
+    pub check_normalized: bool,
+    pub normalized_tolerance: f64
 }
 
 #[derive(PartialEq, Copy, Clone)]
@@ -202,9 +210,19 @@ impl Default for PauseControls {
     }
 }
 
+impl Default for ValidatorSettings {
+    fn default() -> Self {
+        Self {
+            check_nan: true,
+            check_normalized: true,
+            normalized_tolerance: 1e-12
+        }
+    }
+}
+
 // hard cap of 16 args (¬▂¬)
 fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
-      config_states: (ResMut<VisualSettings>, ResMut<ParticleSettings>, ResMut<UiState>, ResMut<SaveLoadState>, ResMut<ShutdownState>),
+      config_states: (ResMut<VisualSettings>, ResMut<ParticleSettings>, ResMut<UiState>, ResMut<SaveLoadState>, ResMut<ShutdownState>, ResMut<ValidatorSettings>),
       controls: (ResMut<SpeedControls>, ResMut<PauseControls>),
       mut physics_manager: ResMut<PhysicsManager>,
       mut commands: Commands,
@@ -224,7 +242,8 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
         mut particle_settings,
         mut ui_state,
         mut config_state,
-        mut shutdown_state
+        mut shutdown_state,
+        mut validator_settings
     ) = config_states;
 
     let _window = ui
@@ -757,6 +776,11 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                             ui.text_colored([1., 0.5, 0.5, 1.], "Can't keep up!");
                         });
                     }
+                }
+
+                if let Some(_tab_item) = ui.tab_item("Validation") {
+                    ui.checkbox("Check for NaN", &mut validator_settings.check_nan);
+                    ui.checkbox("Check for non-normalized state", &mut validator_settings.check_normalized);
                 }
             }
         });
