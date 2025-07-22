@@ -24,7 +24,7 @@ pub fn nan_validator(particles: Query<(&SpaceDustPhysics, &SpaceDustId)>,
     for (state, id) in particles {
         for n in &state.0 {
             if n.is_nan() {
-                panic!("[Validator] Found a NaN in the particle {} state vector: {}", id, ship.0);
+                panic!("[Validator] Found a NaN in the particle {} state vector: {}", id, state.0);
             }
         }
     }
