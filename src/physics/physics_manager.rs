@@ -1,8 +1,7 @@
 use crate::physics::physics_parameters::PhysicsParameters;
 use bevy::prelude::Resource;
 use deflector_core::evolve::rk4_step;
-use deflector_core::types::ParticleState;
-use deflector_core::types::ParticleType::Massive;
+use deflector_core::types::{ParticleState, ParticleType};
 use deflector_core::warp_drive::WarpDrive;
 
 #[derive(Resource)]
@@ -47,7 +46,8 @@ impl PhysicsManager {
                               initial_z: f64,
                               initial_vx: f64, 
                               initial_vy: f64, 
-                              initial_vz: f64) -> ParticleState<f64> {
+                              initial_vz: f64,
+                              particle_type: ParticleType) -> ParticleState<f64> {
         self.physics_parameters.warp_drive().make_normalized_state(
             initial_x,
             initial_y,
@@ -55,7 +55,7 @@ impl PhysicsManager {
             initial_vx,
             initial_vy,
             initial_vz,
-            &Massive
+            &particle_type
         ).expect("warp_drive.make_normalized_state() failed")
     }
     

@@ -8,6 +8,7 @@ use crate::PHYSICS_SCALING_FACTOR;
 use bevy::asset::Assets;
 use bevy::math::Vec3;
 use bevy::prelude::{ColorMaterial, Commands, Res, ResMut, Single, Time, Transform, With};
+use deflector_core::types::ParticleType;
 use rand::Rng;
 use crate::game_systems::fixed_update::space_dust_click_observer::space_dust_click_observer;
 use crate::game_systems::tagging::TaggedParticles;
@@ -50,6 +51,11 @@ pub fn spawn_space_dust(time: Res<Time>,
     );
 
     let id = SpaceDustId(uuid::Builder::from_random_bytes(rng.random()).into_uuid());
+    
+    let particle_type = match rng.random_bool(particle_settings.photon_chance) {
+        true => ParticleType::Photon,
+        false => ParticleType::Massive
+    };
 
     let mat = if tagged_particles.is_tagged(&id) {
         tagged_space_dust_material_asset.0.clone()
@@ -57,9 +63,10 @@ pub fn spawn_space_dust(time: Res<Time>,
         space_dust_mats.get_space_dust_color(
             &mut materials,
             pos.z as f64 / PHYSICS_SCALING_FACTOR,
+            &particle_type
         )
     };
 
-    commands.spawn(SpaceDustEntity::new_from_spawn(pos, &mesh, mat, &physics_manager, &particle_settings, &mut rng, id))
-        .observe(space_dust_click_observer);
+    commands.spawn(SpaceDustEntity::new_from_spawn(pos, &mesh, mat, &physics_manager, &particle_settings, &mut rng, id, particle_type))
+            .observe(space_dust_click_observer);
 }

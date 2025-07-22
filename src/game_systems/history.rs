@@ -1,5 +1,5 @@
 use crate::game_entities::ship::{Ship, ShipPhysics};
-use crate::game_entities::space_dust::{SpaceDust, SpaceDustId, SpaceDustPhysics};
+use crate::game_entities::space_dust::{ParticleTypeComponent, ParticleTypeDef, SpaceDust, SpaceDustId, SpaceDustPhysics};
 use crate::game_systems::config::GlobalConfig;
 use crate::game_systems::seeded_rng::SeededRng;
 use crate::game_systems::tagging::TaggedParticles;
@@ -7,6 +7,7 @@ use crate::game_systems::timers::PhysicsUpdateTimer;
 use crate::game_systems::ui::{ParticleSettings, PauseControls, ShutdownState, VisualSettings};
 use crate::physics::physics_manager::PhysicsManager;
 use bevy::prelude::*;
+use deflector_core::types::ParticleType;
 use serde::{Deserialize, Serialize};
 use crate::util::bull::Bull;
 
@@ -73,10 +74,16 @@ pub struct GlobalSnapshot {
     pub particle_states: Vec<SpaceDustStateSnapshot>
 }
 
+const fn default_particle_type() -> ParticleType {
+    ParticleType::Massive
+}
+
 #[derive(Serialize, Deserialize, Clone)]
 pub struct SpaceDustStateSnapshot {
     pub physics: SpaceDustPhysics,
-    pub id: SpaceDustId
+    pub id: SpaceDustId,
+    #[serde(default = "default_particle_type", with = "ParticleTypeDef")]
+    pub particle_type: ParticleType
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -87,7 +94,7 @@ pub struct ShipStateSnapshot {
 pub fn take_snapshot(timer: Res<PhysicsUpdateTimer>,
                      mut history: ResMut<SimulationHistory>,
                      physics: Res<PhysicsManager>,
-                     particles: Query<(&SpaceDustPhysics, &SpaceDustId), (With<SpaceDust>, Without<Ship>)>,
+                     particles: Query<(&SpaceDustPhysics, &SpaceDustId, &ParticleTypeComponent), (With<SpaceDust>, Without<Ship>)>,
                      ship: Single<&ShipPhysics, With<Ship>>,
                      visual_settings: Res<VisualSettings>,
                      particle_settings: Res<ParticleSettings>,
@@ -119,6 +126,7 @@ pub fn take_snapshot(timer: Res<PhysicsUpdateTimer>,
         SpaceDustStateSnapshot {
             physics: p.0.clone(),
             id: p.1.clone(),
+            particle_type: p.2.0
         }
     }).collect::<Vec<_>>();
 

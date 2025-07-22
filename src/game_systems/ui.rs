@@ -48,6 +48,7 @@ pub struct ParticleSettings {
     pub x_velocity_variance: f64, // physics units
     pub y_velocity_variance: f64, // physics units
     pub z_velocity_variance: f64, // physics units
+    pub photon_chance: f64 // [0, 1]
 }
 
 #[derive(Resource)]
@@ -135,7 +136,8 @@ impl Default for ParticleSettings {
             z_position_variance: 0.,
             x_velocity_variance: 0.0,
             y_velocity_variance: 0.0,
-            z_velocity_variance: 0.0
+            z_velocity_variance: 0.0,
+            photon_chance: 0.0
         }
     }
 }
@@ -318,6 +320,8 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                 }
 
                 if let Some(_tab_item) = ui.tab_item("Particles") {
+                    ui.text("Initial Position");
+
                     ui.slider("y-Position Spread", 0.01, 150., &mut particle_settings.y_position_variance);
 
                     ui.slider("z-Position Spread", 0.0, 150., &mut particle_settings.z_position_variance);
@@ -330,6 +334,9 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                             });
                         }
                     }
+
+                    ui.separator();
+                    ui.text("Initial Velocity");
 
                     if ui.slider("y-Velocity Spread", 0., 0.9, &mut particle_settings.y_velocity_variance) {
                         if !particle_settings.validate_velocity() {
@@ -349,8 +356,6 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                         }
                     }
 
-                    ui.separator();
-
                     ui.text_colored(
                         [0.75, 0.75, 0.75, 1.],
                         format!(
@@ -358,6 +363,11 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                             (particle_settings.normalized_velocity_spread() * 1000000.).floor() / 1000000.
                         ),
                     );
+
+                    ui.separator();
+                    ui.text("Particle Types");
+
+                    ui.slider("Photon Spawn Ratio", 0.0, 1.0, &mut particle_settings.photon_chance);
                 }
 
                 if let Some(_tab_item) = ui.tab_item("Visuals") {
@@ -681,7 +691,8 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                                                 &space_dust_mesh,
                                                 &tagged_mat,
                                                 s.physics,
-                                                s.id
+                                                s.id,
+                                                s.particle_type
                                             )
                                         } else {
                                             SpaceDustEntity::new_from_resume(
@@ -689,7 +700,8 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                                                 &mut color_materials,
                                                 &mut space_dust_mats,
                                                 s.physics,
-                                                s.id
+                                                s.id,
+                                                s.particle_type
                                             )
                                         }
                                     }).collect::<Vec<_>>();
