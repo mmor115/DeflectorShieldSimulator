@@ -326,6 +326,9 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
 
                     ui.slider("z-Position Spread", 0.0, 150., &mut particle_settings.z_position_variance);
 
+                    ui.separator();
+                    ui.text("Initial Velocity");
+
                     if ui.slider("x-Velocity Spread", 0., 0.9, &mut particle_settings.x_velocity_variance) {
                         if !particle_settings.validate_velocity() {
                             particle_settings.x_velocity_variance = particle_settings.max_x_velocity();
@@ -334,9 +337,6 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                             });
                         }
                     }
-
-                    ui.separator();
-                    ui.text("Initial Velocity");
 
                     if ui.slider("y-Velocity Spread", 0., 0.9, &mut particle_settings.y_velocity_variance) {
                         if !particle_settings.validate_velocity() {
