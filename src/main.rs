@@ -44,14 +44,16 @@ fn main() {
             FixedUpdate, (
                 pre_update_physics,
                 update_ship,
-                update_bubbles,
-                spawn_space_dust.run_if(spawn_space_dust_predicate),
+                (
+                    update_bubbles,
+                    spawn_space_dust.run_if(spawn_space_dust_predicate)
+                ),
                 update_space_dust,
+                take_snapshot,
                 (
                     nan_validator.run_if(nan_validator_predicate),
                     normalization_validator.run_if(normalization_validator_predicate)
                 ),
-                take_snapshot,
                 post_update_physics
             ).chain(),
         )
