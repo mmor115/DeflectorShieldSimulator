@@ -42,8 +42,15 @@ pub struct VisualSettings {
     pub hide_untagged_particles: bool
 }
 
+// Thanks, serde!
+fn return_true() -> bool {
+    true
+}
+
 #[derive(Resource, Serialize, Deserialize, Clone)]
 pub struct ParticleSettings {
+    #[serde(default = "return_true")]
+    pub spawning_enabled: bool,
     pub y_position_variance: f32, // game units
     pub z_position_variance: f32, // game units
     pub x_velocity_variance: f64, // physics units
@@ -141,6 +148,7 @@ impl ParticleSettings {
 impl Default for ParticleSettings {
     fn default() -> Self {
         Self {
+            spawning_enabled: true,
             y_position_variance: 150.,
             z_position_variance: 0.,
             x_velocity_variance: 0.0,
@@ -341,6 +349,9 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                 }
 
                 if let Some(_tab_item) = ui.tab_item("Particles") {
+                    ui.checkbox("Spawn Particles", &mut particle_settings.spawning_enabled);
+
+                    ui.separator();
                     ui.text("Initial Position");
 
                     ui.slider("y-Position Spread", 0.01, 150., &mut particle_settings.y_position_variance);
@@ -662,7 +673,7 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
 
                             ui.same_line();
 
-                            ui.input_scalar(" ", &mut ui_state.resume_idx_buf)
+                            ui.input_scalar("##resume_idx_buf", &mut ui_state.resume_idx_buf)
                                 .step(1)
                                 .step_fast(10)
                                 .build();
@@ -782,12 +793,12 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
 
                 if let Some(_tab_item) = ui.tab_item("Validation") {
                     ui.text("Check for NaN");
-                    ui.checkbox("Enabled", &mut validator_settings.check_nan);
+                    ui.checkbox("Enabled##CheckNaNEnabled", &mut validator_settings.check_nan);
 
                     ui.separator();
 
                     ui.text("Check for non-normalized state");
-                    ui.checkbox("Enabled", &mut validator_settings.check_normalized);
+                    ui.checkbox("Enabled##CheckNormalizedEnabled", &mut validator_settings.check_normalized);
 
                     let tolerance_slider =
                         ui.slider_config("Tolerance", -12, -1)

@@ -21,7 +21,7 @@ use pan_camera::pan_camera;
 use post_update_physics::post_update_physics;
 use pre_update_physics::pre_update_physics;
 use setup::setup;
-use spawn_space_dust::spawn_space_dust;
+use spawn_space_dust::*;
 use update_bubbles::update_bubbles;
 use update_ship::update_ship;
 use update_space_dust::update_space_dust;
@@ -45,7 +45,7 @@ fn main() {
                 pre_update_physics,
                 update_ship,
                 update_bubbles,
-                spawn_space_dust,
+                spawn_space_dust.run_if(spawn_space_dust_predicate),
                 update_space_dust,
                 (
                     nan_validator.run_if(nan_validator_predicate),

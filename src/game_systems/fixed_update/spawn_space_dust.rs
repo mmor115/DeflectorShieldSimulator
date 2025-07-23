@@ -15,6 +15,24 @@ use crate::game_systems::tagging::TaggedParticles;
 
 const DUST_SPAWN_LEAD: f32 = 275.;
 
+pub fn spawn_space_dust_predicate(particle_settings: Res<ParticleSettings>,
+                                  pause_controls: Res<PauseControls>,
+                                  shutdown_state: Res<ShutdownState>) -> bool {
+    if pause_controls.paused {
+        return false;
+    }
+
+    if shutdown_state.in_shutdown_state {
+        return false;
+    }
+
+    if !particle_settings.spawning_enabled {
+        return false;
+    }
+
+    true
+}
+
 pub fn spawn_space_dust(time: Res<Time>,
                         mut timer: ResMut<SpaceDustSpawnTimer>,
                         mut commands: Commands,
@@ -25,19 +43,9 @@ pub fn spawn_space_dust(time: Res<Time>,
                         physics_manager: Res<PhysicsManager>,
                         ship_transform: Single<&Transform, With<Ship>>,
                         particle_settings: Res<ParticleSettings>,
-                        shutdown_state: Res<ShutdownState>,
-                        pause_controls: Res<PauseControls>,
                         tagged_particles: Res<TaggedParticles>,
                         tagged_space_dust_material_asset: Res<TaggedSpaceDustMaterialAsset>) {
-    if pause_controls.paused {
-        return;
-    }
-
     if !timer.tick(time.delta()).just_finished() {
-        return;
-    }
-
-    if shutdown_state.in_shutdown_state {
         return;
     }
 
