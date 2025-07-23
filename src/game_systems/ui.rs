@@ -11,7 +11,7 @@ use bevy::app::{App, PostUpdate};
 use bevy::math::Vec3Swizzles;
 use bevy::prelude::*;
 use bevy_mod_imgui::ImguiContext;
-use imgui::StyleColor;
+use imgui::{SliderFlags, StyleColor};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::fs::OpenOptions;
@@ -91,7 +91,8 @@ pub struct PauseControls {
 pub struct ValidatorSettings {
     pub check_nan: bool,
     pub check_normalized: bool,
-    pub normalized_tolerance: f64
+    pub normalized_tolerance: f64,
+    normalized_tolerance_power: i32
 }
 
 #[derive(PartialEq, Copy, Clone)]
@@ -215,7 +216,8 @@ impl Default for ValidatorSettings {
         Self {
             check_nan: true,
             check_normalized: true,
-            normalized_tolerance: 1e-12
+            normalized_tolerance: 1e-12,
+            normalized_tolerance_power: -12
         }
     }
 }
@@ -544,8 +546,8 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
 
                                 let mut oo = OpenOptions::new();
                                 oo.read(true)
-                                    .write(true)
-                                    .create(true);
+                                  .write(true)
+                                  .create(true);
 
                                 match oo.open(path) {
                                     Ok(file) => {
@@ -779,8 +781,22 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                 }
 
                 if let Some(_tab_item) = ui.tab_item("Validation") {
-                    ui.checkbox("Check for NaN", &mut validator_settings.check_nan);
-                    ui.checkbox("Check for non-normalized state", &mut validator_settings.check_normalized);
+                    ui.text("Check for NaN");
+                    ui.checkbox("Enabled", &mut validator_settings.check_nan);
+
+                    ui.separator();
+
+                    ui.text("Check for non-normalized state");
+                    ui.checkbox("Enabled", &mut validator_settings.check_normalized);
+
+                    let tolerance_slider =
+                        ui.slider_config("Tolerance", -12, -1)
+                          .flags(SliderFlags::NO_ROUND_TO_FORMAT)
+                          .display_format("1e%d");
+
+                    if tolerance_slider.build(&mut validator_settings.normalized_tolerance_power) {
+                        validator_settings.normalized_tolerance = 10f64.powi(validator_settings.normalized_tolerance_power);
+                    }
                 }
             }
         });
