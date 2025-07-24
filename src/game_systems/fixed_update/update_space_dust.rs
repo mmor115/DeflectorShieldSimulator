@@ -47,7 +47,7 @@ pub fn update_space_dust(timer: Res<PhysicsUpdateTimer>,
 
         dust_pos.translation = crate::physics_to_game(dust_state.0);
 
-        if dust_pos.translation.x < ship_transform.translation.x - DUST_CULL_DRAG_X || abs(dust_pos.translation.y) > DUST_CULL_DRAG_Y {
+        if (dust_pos.translation.x - ship_transform.translation.x).abs() > DUST_CULL_DRAG_X || abs(dust_pos.translation.y) > DUST_CULL_DRAG_Y {
             par_commands.command_scope(|mut commands| {
                 commands.entity(entity_id).despawn();
             });
