@@ -96,10 +96,18 @@ pub struct PauseControls {
 
 #[derive(Resource)]
 pub struct ValidatorSettings {
-    pub check_nan: bool,
-    pub check_normalized: bool,
+    pub nan_validator: ValidatorErrBehavior,
+    pub normalization_validator: ValidatorErrBehavior,
     pub normalized_tolerance: f64,
     normalized_tolerance_power: i32
+}
+
+#[derive(PartialEq, Copy, Clone, Serialize, Deserialize)]
+pub enum ValidatorErrBehavior {
+    Ignore,
+    RemoveParticle,
+    ExplodeParticle,
+    Die
 }
 
 #[derive(PartialEq, Copy, Clone)]
@@ -222,8 +230,8 @@ impl Default for PauseControls {
 impl Default for ValidatorSettings {
     fn default() -> Self {
         Self {
-            check_nan: true,
-            check_normalized: true,
+            nan_validator: ValidatorErrBehavior::Die,
+            normalization_validator: ValidatorErrBehavior::ExplodeParticle,
             normalized_tolerance: 1e-12,
             normalized_tolerance_power: -12
         }
@@ -793,12 +801,26 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
 
                 if let Some(_tab_item) = ui.tab_item("Validation") {
                     ui.text("Check for NaN");
-                    ui.checkbox("Enabled##CheckNaNEnabled", &mut validator_settings.check_nan);
+
+                    ui.radio_button("Ignore##NaNCheckIgnore", &mut validator_settings.nan_validator, ValidatorErrBehavior::Ignore);
+                    ui.same_line();
+                    ui.radio_button("Die##NaNCheckDie", &mut validator_settings.nan_validator, ValidatorErrBehavior::Die);
+                    ui.same_line();
+                    ui.radio_button("Remove Particle##NaNCheckRemove", &mut validator_settings.nan_validator, ValidatorErrBehavior::RemoveParticle);
+                    ui.same_line();
+                    ui.radio_button("Explode Particle##NaNCheckExplode", &mut validator_settings.nan_validator, ValidatorErrBehavior::ExplodeParticle);
 
                     ui.separator();
 
                     ui.text("Check for non-normalized state");
-                    ui.checkbox("Enabled##CheckNormalizedEnabled", &mut validator_settings.check_normalized);
+
+                    ui.radio_button("Ignore##NormCheckIgnore", &mut validator_settings.normalization_validator, ValidatorErrBehavior::Ignore);
+                    ui.same_line();
+                    ui.radio_button("Die##NormCheckDie", &mut validator_settings.normalization_validator, ValidatorErrBehavior::Die);
+                    ui.same_line();
+                    ui.radio_button("Remove Particle##NormCheckRemove", &mut validator_settings.normalization_validator, ValidatorErrBehavior::RemoveParticle);
+                    ui.same_line();
+                    ui.radio_button("Explode Particle##NormCheckExplode", &mut validator_settings.normalization_validator, ValidatorErrBehavior::ExplodeParticle);
 
                     let tolerance_slider =
                         ui.slider_config("Tolerance", -12, -1)

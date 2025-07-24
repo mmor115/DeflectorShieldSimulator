@@ -6,3 +6,4 @@ pub mod pre_update_physics;
 pub mod post_update_physics;
 pub mod space_dust_click_observer;
 pub mod validators;
+pub mod update_explosions;

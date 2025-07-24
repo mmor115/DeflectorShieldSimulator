@@ -6,7 +6,9 @@ mod util;
 use bevy::prelude::*;
 use bevy_mod_imgui::prelude::*;
 use deflector_core::types::{ParticleState, ParticleStateComponents};
+use game_entities::explosion::ExplosionPlugin;
 use game_systems::camera_control::CameraControlPlugin;
+use game_systems::fixed_update::update_explosions::update_explosions;
 use game_systems::fixed_update::validators::*;
 use game_systems::fixed_update::*;
 use game_systems::frame_update::handle_space_bar::handle_space_bar;
@@ -45,14 +47,19 @@ fn main() {
                 pre_update_physics,
                 update_ship,
                 (
+                    update_explosions,
                     update_bubbles,
                     spawn_space_dust.run_if(spawn_space_dust_predicate)
                 ),
                 update_space_dust,
+                (
+                    nan_validator_pre_snapshot.run_if(nan_validator_pre_snapshot_predicate),
+                    normalization_validator_pre_snapshot.run_if(normalization_validator_pre_snapshot_predicate)
+                ),
                 take_snapshot,
                 (
-                    nan_validator.run_if(nan_validator_predicate),
-                    normalization_validator.run_if(normalization_validator_predicate)
+                    nan_validator_post_snapshot.run_if(nan_validator_post_snapshot_predicate),
+                    normalization_validator_post_snapshot.run_if(normalization_validator_post_snapshot_predicate)
                 ),
                 post_update_physics
             ).chain(),
@@ -62,6 +69,7 @@ fn main() {
         .add_plugins(HistoryPlugin)
         .add_plugins(TaggingPlugin)
         .add_plugins(CameraControlPlugin)
+        .add_plugins(ExplosionPlugin)
         .run();
 }
 
