@@ -1,4 +1,4 @@
-use crate::game_systems::ui::{ParticleSettings, ShutdownState, VisualSettings};
+use crate::game_systems::ui::{ParticleSettings, ShutdownState, ValidatorSettings, VisualSettings};
 use crate::physics::physics_parameters::PhysicsParameters;
 use deflector_core::wd_ours::WarpDriveOurs;
 use serde::{Deserialize, Serialize};
@@ -27,7 +27,9 @@ pub struct GlobalConfig {
     pub physics_config: PhysicsConfig,
     pub particle_settings: ParticleSettings,
     pub visual_settings: VisualSettings,
-    pub shutdown_config: ShutdownConfig
+    pub shutdown_config: ShutdownConfig,
+    #[serde(default)]
+    pub validator_settings: ValidatorSettings
 }
 
 impl From<&PhysicsConfig> for PhysicsParameters {

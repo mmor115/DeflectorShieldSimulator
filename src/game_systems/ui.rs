@@ -94,7 +94,7 @@ pub struct PauseControls {
     pub paused: bool
 }
 
-#[derive(Resource)]
+#[derive(Resource, Serialize, Deserialize, Clone)]
 pub struct ValidatorSettings {
     pub nan_validator: ValidatorErrBehavior,
     pub normalization_validator: ValidatorErrBehavior,
@@ -232,8 +232,8 @@ impl Default for ValidatorSettings {
         Self {
             nan_validator: ValidatorErrBehavior::Die,
             normalization_validator: ValidatorErrBehavior::ExplodeParticle,
-            normalized_tolerance: 1e-12,
-            normalized_tolerance_power: -12
+            normalized_tolerance: 1e-6,
+            normalized_tolerance_power: -6
         }
     }
 }
@@ -434,7 +434,8 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                             physics_config: (&physics_manager.physics_parameters).into(),
                             particle_settings: particle_settings.clone(),
                             visual_settings: visual_settings.clone(),
-                            shutdown_config: shutdown_state.as_ref().into()
+                            shutdown_config: shutdown_state.as_ref().into(),
+                            validator_settings: validator_settings.clone()
                         };
 
                         let json = serde_json::to_string_pretty(&config).unwrap();
@@ -459,6 +460,7 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                                     Ok(config) => {
                                         *visual_settings = config.visual_settings;
                                         *particle_settings = config.particle_settings;
+                                        *validator_settings = config.validator_settings;
                                         *shutdown_state = (&config.shutdown_config).into();
                                         ui_state.need_remesh_inner_bubble = true;
                                         ui_state.need_remesh_outer_bubble = true;

@@ -4,7 +4,7 @@ use crate::game_systems::config::GlobalConfig;
 use crate::game_systems::seeded_rng::SeededRng;
 use crate::game_systems::tagging::TaggedParticles;
 use crate::game_systems::timers::PhysicsUpdateTimer;
-use crate::game_systems::ui::{ParticleSettings, PauseControls, ShutdownState, VisualSettings};
+use crate::game_systems::ui::{ParticleSettings, PauseControls, ShutdownState, ValidatorSettings, VisualSettings};
 use crate::physics::physics_manager::PhysicsManager;
 use bevy::prelude::*;
 use deflector_core::types::ParticleType;
@@ -98,6 +98,7 @@ pub fn take_snapshot(timer: Res<PhysicsUpdateTimer>,
                      ship: Single<&ShipPhysics, With<Ship>>,
                      visual_settings: Res<VisualSettings>,
                      particle_settings: Res<ParticleSettings>,
+                     validator_settings: Res<ValidatorSettings>,
                      shutdown_state: Res<ShutdownState>,
                      seeded_rng: Res<SeededRng>,
                      pause_controls: Res<PauseControls>) {
@@ -113,7 +114,8 @@ pub fn take_snapshot(timer: Res<PhysicsUpdateTimer>,
         physics_config: (&physics.physics_parameters).into(),
         particle_settings: particle_settings.clone(),
         visual_settings: visual_settings.clone(),
-        shutdown_config: shutdown_state.as_ref().into()
+        shutdown_config: shutdown_state.as_ref().into(),
+        validator_settings: validator_settings.clone()
     };
 
     let global_time = physics.global_time();
