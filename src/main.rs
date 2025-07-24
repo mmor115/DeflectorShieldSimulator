@@ -38,7 +38,7 @@ fn main() {
         .add_plugins(ImguiPlugin::default())
         .add_plugins(MeshPickingPlugin)
         .add_systems(Startup, setup)
-        .insert_resource(Time::<Fixed>::from_hz(200.0))
+        .insert_resource(Time::<Fixed>::from_hz(2000.0))
         .insert_resource(SpaceDustSpawnTimer::default())
         .insert_resource(PhysicsUpdateTimer::default())
         .add_systems(Update, (pan_camera, handle_space_bar))

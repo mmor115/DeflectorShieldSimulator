@@ -788,7 +788,7 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                         speed_controls.tick_rate_factor = 1.;
                     }
 
-                    if ui.slider("Simulation Speed", 0.1, 3., &mut speed_controls.tick_rate_factor) {
+                    if ui.slider("Simulation Speed", 0.1, 6., &mut speed_controls.tick_rate_factor) {
                         speed_controls.need_apply = true;
                     }
 

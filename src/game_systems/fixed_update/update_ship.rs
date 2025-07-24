@@ -2,6 +2,7 @@ use crate::game_entities::ship::{Ship, ShipPhysics};
 use crate::game_systems::timers::PhysicsUpdateTimer;
 use crate::physics::physics_manager::PhysicsManager;
 use bevy::prelude::{Res, ResMut, Single, Transform, With};
+use deflector_core::types::ParticleType;
 use crate::game_systems::ui::PauseControls;
 
 pub fn update_ship(timer: ResMut<PhysicsUpdateTimer>,
@@ -18,6 +19,6 @@ pub fn update_ship(timer: ResMut<PhysicsUpdateTimer>,
 
     let (mut ship_transform, mut ship_state) = ship.into_inner();
 
-    physics.step_particle(&mut ship_state.0);
+    physics.step_particle(&mut ship_state.0, &ParticleType::Massive);
     ship_transform.translation = crate::physics_to_game(ship_state.0);
 }

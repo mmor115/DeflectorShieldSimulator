@@ -41,9 +41,9 @@ pub fn update_space_dust(timer: Res<PhysicsUpdateTimer>,
         _,
         _,
         _,
-        _
+        particle_type
     )| {
-        physics.step_particle(&mut dust_state.0);
+        physics.step_particle(&mut dust_state.0, &particle_type.0);
 
         dust_pos.translation = crate::physics_to_game(dust_state.0);
 

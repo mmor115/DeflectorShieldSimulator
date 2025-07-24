@@ -1,6 +1,6 @@
 use crate::physics::physics_parameters::PhysicsParameters;
 use bevy::prelude::Resource;
-use deflector_core::evolve::rk4_step;
+use deflector_core::evolve::rk4_step_adaptive;
 use deflector_core::types::{ParticleState, ParticleType};
 use deflector_core::warp_drive::WarpDrive;
 
@@ -64,7 +64,13 @@ impl PhysicsManager {
                                           .expect("warp_drive.make_ship_state() failed")
     }
     
-    pub fn step_particle(&self, p: &mut ParticleState<f64>) {
-        rk4_step(self.global_time, self.step_size, self.physics_parameters.warp_drive(), p);
+    pub fn step_particle(&self, p: &mut ParticleState<f64>, particle_type: &ParticleType) {
+        rk4_step_adaptive(
+            self.global_time,
+            self.step_size,
+            self.physics_parameters.warp_drive(),
+            p,
+            particle_type
+        );
     }
 }
