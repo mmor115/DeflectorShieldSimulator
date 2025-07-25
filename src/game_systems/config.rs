@@ -13,7 +13,10 @@ pub struct PhysicsConfig {
     pub x0: f64,
     pub t0: f64,
     pub gamma: f64,
-    pub epsilon: f64
+    pub epsilon: f64,
+    pub deflector_back: f64,
+    pub deflector_sigma_factor: f64,
+    pub deflector_sigma_pushout: f64
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -44,7 +47,10 @@ impl From<&PhysicsConfig> for PhysicsParameters {
                 x0: value.x0,
                 t0: value.t0,
                 gamma: value.gamma,
-                epsilon: value.epsilon
+                epsilon: value.epsilon,
+                deflector_sigma_pushout: value.deflector_sigma_pushout,
+                deflector_sigma_factor: value.deflector_sigma_factor,
+                deflector_back: value.deflector_back
             }
         }
     }
@@ -61,7 +67,10 @@ impl From<&PhysicsParameters> for PhysicsConfig {
             x0: value.warp_drive.x0,
             t0: value.warp_drive.t0,
             gamma: value.warp_drive.gamma,
-            epsilon: value.warp_drive.epsilon
+            epsilon: value.warp_drive.epsilon,
+            deflector_back: value.warp_drive.deflector_back,
+            deflector_sigma_factor: value.warp_drive.deflector_sigma_factor,
+            deflector_sigma_pushout: value.warp_drive.deflector_sigma_pushout
         }
     }
 }

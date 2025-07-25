@@ -946,9 +946,9 @@ dependencies = [
 
 [[package]]
 name = "bevy_mod_imgui"
-version = "0.7.1"
+version = "0.7.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8ba0251fc1820cabc3963060da0a42c317ef5da95578be223226d01734012f56"
+checksum = "78bb9ade172c20e874c191bd0338579861f285c7593cc77c69c54fe7aabf817a"
 dependencies = [
  "bevy",
  "bytemuck",
@@ -1949,7 +1949,7 @@ checksum = "2a2330da5de22e8a3cb63252ce2abb30116bf5265e89c0e01bc17015ce30a476"
 [[package]]
 name = "deflector-core"
 version = "0.1.0"
-source = "git+ssh://git@github.com-mmor115/lucass-carneiro/DeflectorShields.git?rev=4ed3290a#4ed3290ab4e109c52d3af89ef0bcc65f336bfdef"
+source = "git+ssh://git@github.com-mmor115/lucass-carneiro/DeflectorShields.git?rev=77c802a2#77c802a2c2da4edf2a71c44449b08d0760130178"
 dependencies = [
  "env_logger",
  "log",
