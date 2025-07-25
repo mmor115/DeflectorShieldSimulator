@@ -335,10 +335,26 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                     }
 
                     let mut k0_scratch = parameters.k0();
-                    ui.slider("Deflection Strength", 0.0, 0.9, &mut k0_scratch);
+                    if ui.slider("Deflection Strength", 0.0, 0.9, &mut k0_scratch) {
+                        parameters.set_k0(k0_scratch);
+                    }
                     if ui.is_item_hovered() {
                         ui.tooltip_text("k0");
-                        parameters.set_k0(k0_scratch);
+                    }
+
+                    let mut deflector_sigma_pushout_scratch = parameters.deflector_sigma_pushout();
+                    if ui.slider("Sigma Pushout", 0.0, 4., &mut deflector_sigma_pushout_scratch) {
+                        parameters.set_deflector_sigma_pushout(deflector_sigma_pushout_scratch);
+                    }
+
+                    let mut deflector_sigma_factor_scratch = parameters.deflector_sigma_factor();
+                    if ui.slider("Sigma Factor", 0.0, 4., &mut deflector_sigma_factor_scratch) {
+                        parameters.set_deflector_sigma_factor(deflector_sigma_factor_scratch);
+                    }
+
+                    let mut deflector_back_scratch = parameters.deflector_back();
+                    if ui.slider("Deflector Back", 0.0, 1., &mut deflector_back_scratch) {
+                        parameters.set_deflector_back(deflector_back_scratch);
                     }
 
                     if *in_shutdown_state {

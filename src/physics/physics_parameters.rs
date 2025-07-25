@@ -33,6 +33,18 @@ impl PhysicsParameters {
         self.warp_drive.get_k0()
     }
     
+    pub fn deflector_sigma_pushout(&self) -> f64 {
+        self.warp_drive.get_deflector_sigma_pushout()
+    }
+    
+    pub fn deflector_sigma_factor(&self) -> f64 {
+        self.warp_drive.get_deflector_sigma_factor()
+    }
+    
+    pub fn deflector_back(&self) -> f64 {
+        self.warp_drive.get_deflector_back()
+    }
+    
     pub fn set_bubble_radius(&mut self, value: f64) {
         self.warp_drive.update_radius(value);
     }
@@ -55,6 +67,18 @@ impl PhysicsParameters {
 
     pub fn set_k0(&mut self, value: f64) {
         self.warp_drive.update_k0(value);
+    }
+    
+    pub fn set_deflector_sigma_pushout(&mut self, value: f64) {
+        self.warp_drive.update_deflector_sigma_pushout(value);
+    }
+    
+    pub fn set_deflector_sigma_factor(&mut self, value: f64) {
+        self.warp_drive.update_deflector_sigma_factor(value);
+    }
+    
+    pub fn set_deflector_back(&mut self, value: f64) {
+        self.warp_drive.update_deflector_back(value);
     }
     
     pub fn shut_down(&mut self, global_time: f64) {
