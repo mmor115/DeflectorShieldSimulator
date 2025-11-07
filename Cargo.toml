@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-deflector-core = { git = "ssh://git@github.com/lucass-carneiro/DeflectorShields.git", rev = "764b008" }
+deflector-core = { git = "ssh://git@github.com/lucass-carneiro/DeflectorShields.git", rev = "7d44d70d" }
 bevy = { version = "0.16.1", features = ["default", "png"] }
 bevy_picking = { version = "0.16.1", features = ["bevy_mesh_picking_backend"] }
 bevy_mod_imgui = "0.7.2"

@@ -1,7 +1,23 @@
 use crate::game_systems::ui::{ParticleSettings, ShutdownState, ValidatorSettings, VisualSettings};
-use crate::physics::physics_parameters::PhysicsParameters;
+use crate::physics::physics_parameters::{PhysicsParameters, WarpDriveImpl};
 use deflector_core::wd_ours::WarpDriveOurs;
 use serde::{Deserialize, Serialize};
+
+
+#[derive(Serialize, Deserialize, Clone)]
+pub enum WarpDriveKind {
+    Ours,
+    Natario
+}
+
+impl From<&WarpDriveImpl> for WarpDriveKind {
+    fn from(value: &WarpDriveImpl) -> Self {
+        match value {
+            WarpDriveImpl::Ours(_) => WarpDriveKind::Ours,
+            WarpDriveImpl::Natario(_) => WarpDriveKind::Natario
+        }
+    }
+}
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct PhysicsConfig {
@@ -16,7 +32,8 @@ pub struct PhysicsConfig {
     pub epsilon: f64,
     pub deflector_back: f64,
     pub deflector_sigma_factor: f64,
-    pub deflector_sigma_pushout: f64
+    pub deflector_sigma_pushout: f64,
+    pub warp_drive_kind: WarpDriveKind
 }
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -38,39 +55,63 @@ pub struct GlobalConfig {
 impl From<&PhysicsConfig> for PhysicsParameters {
     fn from(value: &PhysicsConfig) -> Self {
         PhysicsParameters {
-            warp_drive: WarpDriveOurs {
-                radius: value.radius,
-                sigma: value.sigma,
-                u: value.u,
-                u0: value.u0,
-                k0: value.k0,
-                x0: value.x0,
-                t0: value.t0,
-                gamma: value.gamma,
-                epsilon: value.epsilon,
-                deflector_sigma_pushout: value.deflector_sigma_pushout,
-                deflector_sigma_factor: value.deflector_sigma_factor,
-                deflector_back: value.deflector_back
-            }
+            warp_drive: WarpDriveImpl::Ours(
+                WarpDriveOurs {
+                    radius: value.radius,
+                    sigma: value.sigma,
+                    u: value.u,
+                    u0: value.u0,
+                    k0: value.k0,
+                    x0: value.x0,
+                    t0: value.t0,
+                    gamma: value.gamma,
+                    epsilon: value.epsilon,
+                    deflector_sigma_pushout: value.deflector_sigma_pushout,
+                    deflector_sigma_factor: value.deflector_sigma_factor,
+                    deflector_back: value.deflector_back
+                }
+            )
         }
     }
 }
 
 impl From<&PhysicsParameters> for PhysicsConfig {
     fn from(value: &PhysicsParameters) -> Self {
-        PhysicsConfig {
-            radius: value.warp_drive.radius,
-            sigma: value.warp_drive.sigma,
-            u: value.warp_drive.u,
-            u0: value.warp_drive.u0,
-            k0: value.warp_drive.k0,
-            x0: value.warp_drive.x0,
-            t0: value.warp_drive.t0,
-            gamma: value.warp_drive.gamma,
-            epsilon: value.warp_drive.epsilon,
-            deflector_back: value.warp_drive.deflector_back,
-            deflector_sigma_factor: value.warp_drive.deflector_sigma_factor,
-            deflector_sigma_pushout: value.warp_drive.deflector_sigma_pushout
+        match &value.warp_drive {
+            WarpDriveImpl::Ours(wd) => {
+                PhysicsConfig {
+                    radius: wd.radius,
+                    sigma: wd.sigma,
+                    u: wd.u,
+                    u0: wd.u0,
+                    k0: wd.k0,
+                    x0: wd.x0,
+                    t0: wd.t0,
+                    gamma: wd.gamma,
+                    epsilon: wd.epsilon,
+                    deflector_back: wd.deflector_back,
+                    deflector_sigma_factor: wd.deflector_sigma_factor,
+                    deflector_sigma_pushout: wd.deflector_sigma_pushout,
+                    warp_drive_kind: (&value.warp_drive).into()
+                }
+            }
+            WarpDriveImpl::Natario(wd) => {
+                PhysicsConfig {
+                    radius: wd.radius,
+                    sigma: wd.sigma,
+                    u: wd.u,
+                    u0: Default::default(),
+                    k0: Default::default(),
+                    x0: wd.x0,
+                    t0: wd.t0,
+                    gamma: Default::default(),
+                    epsilon: wd.epsilon,
+                    deflector_back: Default::default(),
+                    deflector_sigma_factor: Default::default(),
+                    deflector_sigma_pushout: Default::default(),
+                    warp_drive_kind: (&value.warp_drive).into()
+                }
+            }
         }
     }
 }

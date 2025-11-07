@@ -310,52 +310,128 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                         parameters.set_u(u_scratch, global_time);
 
                         let u0 = parameters.u0();
-                        if u0 < 0.1 || u0 > 0.9 {
-                            parameters.set_u(prev_u, global_time);
-                            ui.tooltip(|| {
-                                ui.text_colored([1., 0., 0., 1.], "Shield Drag out of range!")
-                            });
+                        match u0 {
+                            Some(u0) => {
+                                if u0 < 0.1 || u0 > 0.9 {
+                                    parameters.set_u(prev_u, global_time);
+                                    ui.tooltip(|| {
+                                        ui.text_colored([1., 0., 0., 1.], "Shield Drag out of range!")
+                                    });
+                                }
+                            },
+                            None => { }
                         }
                     }
                     if ui.is_item_hovered() {
                         ui.tooltip_text("u");
                     }
 
-                    let mut u0_scratch = parameters.u0();
-                    if ui.slider("Drag", 0.0, 0.9, &mut u0_scratch) {
-                        if *in_shutdown_state {
-                            parameters.set_u0_pure(u0_scratch);
-                        } else {
-                            parameters.set_u0(u0_scratch, &mut ship_state);
-                            ship_transform.translation = physics_to_game(ship_state.0).xy().extend(-10.);
+                    match parameters.u0() {
+                        Some(u0) => {
+                            let mut u0_scratch = u0;
+
+                            if ui.slider("Drag", 0.0, 0.9, &mut u0_scratch) {
+                                if *in_shutdown_state {
+                                    parameters.set_u0_pure(u0_scratch);
+                                } else {
+                                    parameters.set_u0(u0_scratch, &mut ship_state);
+                                    ship_transform.translation = physics_to_game(ship_state.0).xy().extend(-10.);
+                                }
+                            }
+                            if ui.is_item_hovered() {
+                                ui.tooltip_text("u0");
+                            }
+                        },
+                        None => {
+                            ui.disabled(true, || {
+                                let mut dummy = 0.0;
+                                ui.slider("Drag", 0.0, 0.9, &mut dummy);
+
+                                if ui.is_item_hovered() {
+                                    ui.tooltip_text("Selected warp drive does not use this parameter.");
+                                }
+                            });
                         }
                     }
-                    if ui.is_item_hovered() {
-                        ui.tooltip_text("u0");
+
+                    match parameters.k0() {
+                        Some(k0) => {
+                            let mut k0_scratch = k0;
+                            if ui.slider("Deflection Strength", 0.0, 0.9, &mut k0_scratch) {
+                                parameters.set_k0(k0_scratch);
+                            }
+                            if ui.is_item_hovered() {
+                                ui.tooltip_text("k0");
+                            }
+                        },
+                        None => {
+                            ui.disabled(true, || {
+                                let mut dummy = 0.0;
+                                ui.slider("Deflection Strength", 0.0, 0.9, &mut dummy);
+
+                                if ui.is_item_hovered() {
+                                    ui.tooltip_text("Selected warp drive does not use this parameter.");
+                                }
+                            });
+                        }
                     }
 
-                    let mut k0_scratch = parameters.k0();
-                    if ui.slider("Deflection Strength", 0.0, 0.9, &mut k0_scratch) {
-                        parameters.set_k0(k0_scratch);
-                    }
-                    if ui.is_item_hovered() {
-                        ui.tooltip_text("k0");
-                    }
+                    match parameters.deflector_sigma_pushout() {
+                        Some(val) => {
+                            let mut scratch = val;
+                            if ui.slider("Sigma Pushout", 0.0, 4., &mut scratch) {
+                                parameters.set_deflector_sigma_pushout(scratch);
+                            }
+                        },
+                        None => {
+                            ui.disabled(true, || {
+                                let mut dummy = 0.0;
+                                ui.slider("Sigma Pushout", 0.0, 4., &mut dummy);
 
-                    let mut deflector_sigma_pushout_scratch = parameters.deflector_sigma_pushout();
-                    if ui.slider("Sigma Pushout", 0.0, 4., &mut deflector_sigma_pushout_scratch) {
-                        parameters.set_deflector_sigma_pushout(deflector_sigma_pushout_scratch);
-                    }
+                                if ui.is_item_hovered() {
+                                    ui.tooltip_text("Selected warp drive does not use this parameter.");
+                                }
+                            });
+                        }
+                    };
 
-                    let mut deflector_sigma_factor_scratch = parameters.deflector_sigma_factor();
-                    if ui.slider("Sigma Factor", 0.0, 4., &mut deflector_sigma_factor_scratch) {
-                        parameters.set_deflector_sigma_factor(deflector_sigma_factor_scratch);
-                    }
+                    match parameters.deflector_sigma_factor() {
+                        Some(val) => {
+                            let mut scratch = val;
+                            if ui.slider("Sigma Factor", 0.0, 4., &mut scratch) {
+                                parameters.set_deflector_sigma_factor(scratch);
+                            }
+                        },
+                        None => {
+                            ui.disabled(true, || {
+                                let mut dummy = 0.0;
+                                ui.slider("Sigma Factor", 0.0, 4., &mut dummy);
 
-                    let mut deflector_back_scratch = parameters.deflector_back();
-                    if ui.slider("Deflector Back", 0.0, 1., &mut deflector_back_scratch) {
-                        parameters.set_deflector_back(deflector_back_scratch);
-                    }
+                                if ui.is_item_hovered() {
+                                    ui.tooltip_text("Selected warp drive does not use this parameter.");
+                                }
+                            });
+                        }
+                    };
+
+                    match parameters.deflector_back() {
+                        Some(val) => {
+                            let mut scratch = val;
+                            if ui.slider("Deflector Back", 0.0, 1., &mut scratch) {
+                                parameters.set_deflector_back(scratch);
+                            }
+                        },
+                        None => {
+                            ui.disabled(true, || {
+                                let mut dummy = 0.0;
+                                ui.slider("Deflector Back", 0.0, 1., &mut dummy);
+
+                                if ui.is_item_hovered() {
+                                    ui.tooltip_text("Selected warp drive does not use this parameter.");
+                                }
+                            });
+                        }
+                    };
 
                     if *in_shutdown_state {
                         if ui.button("Shut up") {

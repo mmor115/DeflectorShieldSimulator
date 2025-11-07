@@ -1,8 +1,6 @@
 use crate::physics::physics_parameters::PhysicsParameters;
 use bevy::prelude::Resource;
-use deflector_core::evolve::rk4_step_adaptive;
 use deflector_core::types::{ParticleState, ParticleType};
-use deflector_core::warp_drive::WarpDrive;
 
 #[derive(Resource)]
 pub struct PhysicsManager {
@@ -37,7 +35,7 @@ impl PhysicsManager {
     }
 
     pub fn bubble_x_position(&self) -> f64{
-        self.physics_parameters.warp_drive.get_bubble_position(self.global_time)
+        self.physics_parameters.warp_drive.get_dynamic().get_bubble_position(self.global_time)
     }
 
     pub fn new_particle_state(&self,
@@ -48,7 +46,7 @@ impl PhysicsManager {
                               initial_vy: f64, 
                               initial_vz: f64,
                               particle_type: ParticleType) -> ParticleState<f64> {
-        self.physics_parameters.warp_drive().make_normalized_state(
+        self.physics_parameters.warp_drive().get_dynamic().make_normalized_state(
             initial_x,
             initial_y,
             initial_z,
@@ -60,15 +58,15 @@ impl PhysicsManager {
     }
     
     pub fn new_ship_particle_state(&self) -> ParticleState<f64> {
-        self.physics_parameters.warp_drive.make_ship_state(0.)
+        self.physics_parameters.warp_drive.get_dynamic()
+                                          .make_ship_state(0.)
                                           .expect("warp_drive.make_ship_state() failed")
     }
     
     pub fn step_particle(&self, p: &mut ParticleState<f64>, particle_type: &ParticleType) {
-        rk4_step_adaptive(
+        self.physics_parameters.warp_drive().get_dynamic().rk4_step_adaptive(
             self.global_time,
             self.step_size,
-            self.physics_parameters.warp_drive(),
             p,
             particle_type
         );

@@ -34,11 +34,11 @@ impl SimulationHistory {
         }
     }
 
-    pub fn as_borrowed(&self) -> BorrowedSimulationHistory {
+    pub fn as_borrowed(&self) -> BorrowedSimulationHistory<'_> {
         self.into()
     }
 
-    pub fn checkpoint(&self) -> BorrowedSimulationHistory {
+    pub fn checkpoint(&self) -> BorrowedSimulationHistory<'_> {
         let snapshots = if self.snapshots.is_empty() {
             vec![]
         } else {
