@@ -7,4 +7,4 @@ pub mod fixed_update;
 pub mod frame_update;
 pub mod tagging;
 pub mod camera_control;
-mod config;
+pub mod config;

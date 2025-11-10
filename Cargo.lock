@@ -12,6 +12,7 @@ dependencies = [
  "bincode",
  "deflector-core",
  "derive_more 2.0.1",
+ "enum-ordinalize",
  "imgui",
  "log",
  "nalgebra",
@@ -1949,7 +1950,7 @@ checksum = "2a2330da5de22e8a3cb63252ce2abb30116bf5265e89c0e01bc17015ce30a476"
 [[package]]
 name = "deflector-core"
 version = "0.1.0"
-source = "git+ssh://git@github.com/lucass-carneiro/DeflectorShields.git?rev=7d44d70d#7d44d70d38bca17be81f0f4b42b87ac9b48f2ab2"
+source = "git+ssh://git@github.com/lucass-carneiro/DeflectorShields.git?rev=7ee3b48f#7ee3b48f6ac275868395c7f89c7430b5a2dae595"
 dependencies = [
  "env_logger",
  "log",
@@ -2081,6 +2082,26 @@ name = "encase_derive_impl"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f97b51c5cc57ef7c5f7a0c57c250251c49ee4c28f819f87ac32f4aceabc36792"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "enum-ordinalize"
+version = "4.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4a1091a7bb1f8f2c4b28f1fe2cef4980ca2d410a3d727d67ecc3178c9b0800f0"
+dependencies = [
+ "enum-ordinalize-derive",
+]
+
+[[package]]
+name = "enum-ordinalize-derive"
+version = "4.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "8ca9601fb2d62598ee17836250842873a413586e5d7ed88b356e38ddbb0ec631"
 dependencies = [
  "proc-macro2",
  "quote",

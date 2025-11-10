@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
-deflector-core = { git = "ssh://git@github.com/lucass-carneiro/DeflectorShields.git", rev = "7d44d70d" }
+deflector-core = { git = "ssh://git@github.com/lucass-carneiro/DeflectorShields.git", rev = "7ee3b48f" }
 bevy = { version = "0.16.1", features = ["default", "png"] }
 bevy_picking = { version = "0.16.1", features = ["bevy_mesh_picking_backend"] }
 bevy_mod_imgui = "0.7.2"
@@ -16,6 +16,7 @@ serde_json = "1.0.140"
 uuid = { version = "1.17.0", features = ["v4"] }
 rand_xoshiro = { version = "0.7.0", features = ["serde"] }
 bincode = { version = "2.0.1", features = ["serde"] }
+enum-ordinalize = "4.3.2"
 
 # Improves bevy runtime performance
 log = { version = "*", features = ["max_level_debug", "release_max_level_warn"] }

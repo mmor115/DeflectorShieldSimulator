@@ -1,10 +1,14 @@
+use deflector_core::wd_natario::WarpDriveNatario;
 use crate::game_systems::ui::{ParticleSettings, ShutdownState, ValidatorSettings, VisualSettings};
 use crate::physics::physics_parameters::{PhysicsParameters, WarpDriveImpl};
 use deflector_core::wd_ours::WarpDriveOurs;
+use derive_more::Display;
+use enum_ordinalize::Ordinalize;
 use serde::{Deserialize, Serialize};
 
 
-#[derive(Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Ordinalize, Display, Eq, PartialEq)]
+#[repr(usize)]
 pub enum WarpDriveKind {
     Ours,
     Natario
@@ -55,22 +59,34 @@ pub struct GlobalConfig {
 impl From<&PhysicsConfig> for PhysicsParameters {
     fn from(value: &PhysicsConfig) -> Self {
         PhysicsParameters {
-            warp_drive: WarpDriveImpl::Ours(
-                WarpDriveOurs {
-                    radius: value.radius,
-                    sigma: value.sigma,
-                    u: value.u,
-                    u0: value.u0,
-                    k0: value.k0,
-                    x0: value.x0,
-                    t0: value.t0,
-                    gamma: value.gamma,
-                    epsilon: value.epsilon,
-                    deflector_sigma_pushout: value.deflector_sigma_pushout,
-                    deflector_sigma_factor: value.deflector_sigma_factor,
-                    deflector_back: value.deflector_back
-                }
-            )
+            warp_drive: match value.warp_drive_kind {
+                WarpDriveKind::Ours => WarpDriveImpl::Ours(
+                    WarpDriveOurs {
+                        radius: value.radius,
+                        sigma: value.sigma,
+                        u: value.u,
+                        u0: value.u0,
+                        k0: value.k0,
+                        x0: value.x0,
+                        t0: value.t0,
+                        gamma: value.gamma,
+                        epsilon: value.epsilon,
+                        deflector_sigma_pushout: value.deflector_sigma_pushout,
+                        deflector_sigma_factor: value.deflector_sigma_factor,
+                        deflector_back: value.deflector_back
+                    }
+                ),
+                WarpDriveKind::Natario => WarpDriveImpl::Natario(
+                    WarpDriveNatario {
+                        radius: value.radius,
+                        sigma: value.sigma,
+                        u: value.u,
+                        x0: value.x0,
+                        t0: value.t0,
+                        epsilon: value.epsilon,
+                    }
+                )
+            }
         }
     }
 }

@@ -19,10 +19,10 @@ fn make_bubble_mesh(meshes: &mut ResMut<Assets<Mesh>>, physics_radius: f64) -> M
 
 pub fn make_inner_bubble_mesh(meshes: &mut ResMut<Assets<Mesh>>,
                               physics_parameters: &PhysicsParameters) -> Mesh2d {
-    make_bubble_mesh(meshes, physics_parameters.bubble_radius())
+    make_bubble_mesh(meshes, physics_parameters.warp_drive.bubble_radius())
 }
 
 pub fn make_outer_bubble_mesh(meshes: &mut ResMut<Assets<Mesh>>,
                               physics_parameters: &PhysicsParameters) -> Mesh2d {
-    make_bubble_mesh(meshes, physics_parameters.bubble_radius() + physics_parameters.bubble_sigma())
+    make_bubble_mesh(meshes, physics_parameters.warp_drive.bubble_radius() + physics_parameters.warp_drive.bubble_sigma())
 }

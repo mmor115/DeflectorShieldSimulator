@@ -1,6 +1,6 @@
 use crate::game_entities::ship::{Ship, ShipEntity, ShipImageAsset, ShipPhysics};
 use crate::game_entities::space_dust::{SpaceDust, SpaceDustColorMaterials, SpaceDustEntity, SpaceDustMesh, TaggedSpaceDustMaterialAsset};
-use crate::game_systems::config::GlobalConfig;
+use crate::game_systems::config::{GlobalConfig, WarpDriveKind};
 use crate::game_systems::fixed_update::space_dust_click_observer::space_dust_click_observer;
 use crate::game_systems::history::SimulationHistory;
 use crate::game_systems::tagging::TaggedParticles;
@@ -17,6 +17,7 @@ use std::fs;
 use std::fs::OpenOptions;
 use std::io::{BufReader, BufWriter, Write};
 use std::path::Path;
+use enum_ordinalize::Ordinalize;
 
 pub struct UiPlugin;
 
@@ -271,10 +272,22 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
         .position_pivot([1.0, 0.])
         .build(|| {
             let (ship_entity, mut ship_transform, mut ship_state) = ship.into_inner();
+            let global_time = physics_manager.global_time();
 
             if let Some(_tab_bar) = ui.tab_bar("SettingsTabBar") {
+                if let Some(_tab_item) = ui.tab_item("Drive") {
+                    let warp_drive = &mut physics_manager.physics_parameters.warp_drive;
+                    let mut current_drive_index = WarpDriveKind::from(&*warp_drive).ordinal();
+
+                    ui.disabled(shutdown_state.in_shutdown_state, || {
+                        if ui.combo("Warp Drive", &mut current_drive_index, WarpDriveKind::VARIANTS, |v| v.to_string().into()) {
+                            let new_drive = WarpDriveKind::from_ordinal(current_drive_index).expect("Invalid WarpDriveKind ordinal");
+                            *warp_drive = warp_drive.new_from(new_drive, global_time, &mut ship_state);
+                        }
+                    });
+                }
+
                 if let Some(_tab_item) = ui.tab_item("Bubble") {
-                    let global_time = physics_manager.global_time();
                     let (in_shutdown_state, temporary_parameters_opt) = shutdown_state.mut_fields();
 
                     let parameters = if *in_shutdown_state {
@@ -284,36 +297,36 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                     };
                     
                     
-                    let mut radius_scratch = parameters.bubble_radius();
+                    let mut radius_scratch = parameters.warp_drive.bubble_radius();
                     if ui.slider("Radius", 1., 4., &mut radius_scratch) {
                         ui_state.need_remesh_inner_bubble = true;
                         ui_state.need_remesh_outer_bubble = true;
-                        parameters.set_bubble_radius(radius_scratch);
+                        parameters.warp_drive.set_bubble_radius(radius_scratch);
                     }
                     if ui.is_item_hovered() {
                         ui.tooltip_text("The radius of the inner shield.");
                     }
 
-                    let mut sigma_scratch = parameters.bubble_sigma();
+                    let mut sigma_scratch = parameters.warp_drive.bubble_sigma();
                     if ui.slider("Sigma", 0.1, 4., &mut sigma_scratch) {
                         ui_state.need_remesh_outer_bubble = true;
-                        parameters.set_bubble_sigma(sigma_scratch);
+                        parameters.warp_drive.set_bubble_sigma(sigma_scratch);
                     }
                     if ui.is_item_hovered() {
                         ui.tooltip_text("The width of the transition between the inner and outer shield regions.");
                     }
 
-                    let mut u_scratch = parameters.u();
+                    let mut u_scratch = parameters.warp_drive.u();
                     let prev_u = u_scratch;
 
                     if ui.slider("Speed", 0.0, 0.9, &mut u_scratch) {
-                        parameters.set_u(u_scratch, global_time);
+                        parameters.warp_drive.set_u(u_scratch, global_time);
 
-                        let u0 = parameters.u0();
+                        let u0 = parameters.warp_drive.u0();
                         match u0 {
                             Some(u0) => {
                                 if u0 < 0.1 || u0 > 0.9 {
-                                    parameters.set_u(prev_u, global_time);
+                                    parameters.warp_drive.set_u(prev_u, global_time);
                                     ui.tooltip(|| {
                                         ui.text_colored([1., 0., 0., 1.], "Shield Drag out of range!")
                                     });
@@ -326,15 +339,15 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                         ui.tooltip_text("u");
                     }
 
-                    match parameters.u0() {
+                    match parameters.warp_drive.u0() {
                         Some(u0) => {
                             let mut u0_scratch = u0;
 
                             if ui.slider("Drag", 0.0, 0.9, &mut u0_scratch) {
                                 if *in_shutdown_state {
-                                    parameters.set_u0_pure(u0_scratch);
+                                    parameters.warp_drive.set_u0_pure(u0_scratch);
                                 } else {
-                                    parameters.set_u0(u0_scratch, &mut ship_state);
+                                    parameters.warp_drive.set_u0(u0_scratch, &mut ship_state);
                                     ship_transform.translation = physics_to_game(ship_state.0).xy().extend(-10.);
                                 }
                             }
@@ -354,11 +367,11 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                         }
                     }
 
-                    match parameters.k0() {
+                    match parameters.warp_drive.k0() {
                         Some(k0) => {
                             let mut k0_scratch = k0;
                             if ui.slider("Deflection Strength", 0.0, 0.9, &mut k0_scratch) {
-                                parameters.set_k0(k0_scratch);
+                                parameters.warp_drive.set_k0(k0_scratch);
                             }
                             if ui.is_item_hovered() {
                                 ui.tooltip_text("k0");
@@ -376,11 +389,11 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                         }
                     }
 
-                    match parameters.deflector_sigma_pushout() {
+                    match parameters.warp_drive.deflector_sigma_pushout() {
                         Some(val) => {
                             let mut scratch = val;
                             if ui.slider("Sigma Pushout", 0.0, 4., &mut scratch) {
-                                parameters.set_deflector_sigma_pushout(scratch);
+                                parameters.warp_drive.set_deflector_sigma_pushout(scratch);
                             }
                         },
                         None => {
@@ -395,11 +408,11 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                         }
                     };
 
-                    match parameters.deflector_sigma_factor() {
+                    match parameters.warp_drive.deflector_sigma_factor() {
                         Some(val) => {
                             let mut scratch = val;
                             if ui.slider("Sigma Factor", 0.0, 4., &mut scratch) {
-                                parameters.set_deflector_sigma_factor(scratch);
+                                parameters.warp_drive.set_deflector_sigma_factor(scratch);
                             }
                         },
                         None => {
@@ -414,11 +427,11 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                         }
                     };
 
-                    match parameters.deflector_back() {
+                    match parameters.warp_drive.deflector_back() {
                         Some(val) => {
                             let mut scratch = val;
                             if ui.slider("Deflector Back", 0.0, 1., &mut scratch) {
-                                parameters.set_deflector_back(scratch);
+                                parameters.warp_drive.set_deflector_back(scratch);
                             }
                         },
                         None => {
@@ -776,9 +789,9 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                             ui.same_line();
 
                             ui.input_scalar("##resume_idx_buf", &mut ui_state.resume_idx_buf)
-                                .step(1)
-                                .step_fast(10)
-                                .build();
+                              .step(1)
+                              .step_fast(10)
+                              .build();
 
                             if ui.button("Resume from End") {
                                 load_idx = Some(snapshots_len - 1);

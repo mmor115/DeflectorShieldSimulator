@@ -1,4 +1,5 @@
 use crate::game_entities::ship::ShipPhysics;
+use crate::game_systems::config::WarpDriveKind;
 use bevy::prelude::Resource;
 use deflector_core::warp_drive::WarpDrive;
 use deflector_core::wd_natario::WarpDriveNatario;
@@ -25,7 +26,160 @@ impl WarpDriveImpl {
         }
     }
 
-    fn set_u0_pure(&mut self, value: f64) {
+    pub fn bubble_radius(&self) -> f64 {
+        match &self {
+            WarpDriveImpl::Ours(wd) => wd.get_radius(),
+            WarpDriveImpl::Natario(wd) => wd.get_radius()
+        }
+    }
+
+    pub fn bubble_sigma(&self) -> f64 {
+        match &self {
+            WarpDriveImpl::Ours(wd) => wd.get_sigma(),
+            WarpDriveImpl::Natario(wd) => wd.get_sigma()
+        }
+    }
+
+    pub fn u(&self) -> f64 {
+        match &self {
+            WarpDriveImpl::Ours(wd) => wd.get_u(),
+            WarpDriveImpl::Natario(wd) => wd.get_u()
+        }
+    }
+
+    pub fn u0(&self) -> Option<f64> {
+        match &self {
+            WarpDriveImpl::Ours(wd) => Some(wd.get_u0()),
+            WarpDriveImpl::Natario(_) => None
+        }
+    }
+
+    pub fn k0(&self) -> Option<f64> {
+        match &self {
+            WarpDriveImpl::Ours(wd) => Some(wd.get_k0()),
+            WarpDriveImpl::Natario(_) => None
+        }
+    }
+
+    pub fn t0(&self) -> f64 {
+        match &self {
+            WarpDriveImpl::Ours(wd) => wd.t0,
+            WarpDriveImpl::Natario(wd) => wd.t0
+        }
+    }
+
+    pub fn x0(&self) -> f64 {
+        match &self {
+            WarpDriveImpl::Ours(wd) => wd.x0,
+            WarpDriveImpl::Natario(wd) => wd.x0
+        }
+    }
+
+    pub fn deflector_sigma_pushout(&self) -> Option<f64> {
+        match &self {
+            WarpDriveImpl::Ours(wd) => Some(wd.get_deflector_sigma_pushout()),
+            WarpDriveImpl::Natario(_) => None
+        }
+    }
+
+    pub fn deflector_sigma_factor(&self) -> Option<f64> {
+        match &self {
+            WarpDriveImpl::Ours(wd) => Some(wd.get_deflector_sigma_factor()),
+            WarpDriveImpl::Natario(_) => None
+        }
+    }
+
+    pub fn deflector_back(&self) -> Option<f64> {
+        match &self {
+            WarpDriveImpl::Ours(wd) => Some(wd.get_deflector_back()),
+            WarpDriveImpl::Natario(_) => None
+        }
+    }
+
+    pub fn set_bubble_radius(&mut self, value: f64) {
+        match self {
+            WarpDriveImpl::Ours(wd) => wd.update_radius(value),
+            WarpDriveImpl::Natario(wd) => wd.update_radius(value)
+        }
+    }
+
+    pub fn set_bubble_sigma(&mut self, value: f64) {
+        match self {
+            WarpDriveImpl::Ours(wd) => wd.update_sigma(value),
+            WarpDriveImpl::Natario(wd) => wd.update_sigma(value)
+        }
+    }
+
+    pub fn set_u(&mut self, value: f64, t: f64) {
+        match self {
+            WarpDriveImpl::Ours(wd) => wd.update_u(t, value),
+            WarpDriveImpl::Natario(wd) => wd.update_u(t, value)
+        }
+    }
+
+    pub fn set_u0(&mut self, value: f64, ship_state: &mut ShipPhysics) {
+        match self {
+            WarpDriveImpl::Ours(wd) => wd.update_u0(value, ship_state).expect("update_u0 failed"),
+            WarpDriveImpl::Natario(_) => {  }
+        }
+    }
+
+    pub fn set_k0(&mut self, value: f64) {
+        match self {
+            WarpDriveImpl::Ours(wd) => wd.update_k0(value),
+            WarpDriveImpl::Natario(_) => {  }
+        }
+    }
+
+    pub fn set_deflector_sigma_pushout(&mut self, value: f64) {
+        match self {
+            WarpDriveImpl::Ours(wd) => wd.update_deflector_sigma_pushout(value),
+            WarpDriveImpl::Natario(_) => {  }
+        }
+    }
+
+    pub fn set_deflector_sigma_factor(&mut self, value: f64) {
+        match self {
+            WarpDriveImpl::Ours(wd) => wd.update_deflector_sigma_factor(value),
+            WarpDriveImpl::Natario(_) => {  }
+        }
+    }
+
+    pub fn set_deflector_back(&mut self, value: f64) {
+        match self {
+            WarpDriveImpl::Ours(wd) => wd.update_deflector_back(value),
+            WarpDriveImpl::Natario(_) => {  }
+        }
+    }
+
+    pub fn new_from(&self, kind: WarpDriveKind, global_time: f64, ship_state: &mut ShipPhysics) -> WarpDriveImpl {
+        match kind {
+            WarpDriveKind::Ours => WarpDriveImpl::Ours(WarpDriveOurs::resume(
+                global_time,
+                self.bubble_radius(),
+                self.bubble_sigma(),
+                self.u(),
+                self.u0().unwrap_or_else(|| self.u()),
+                self.k0().unwrap_or_else(|| 0.1),
+                self.x0(),
+                self.t0(),
+                self.deflector_sigma_pushout().unwrap_or_else(|| 0.8),
+                self.deflector_sigma_factor().unwrap_or_else(|| 1.0),
+                self.deflector_back().unwrap_or_else(|| 1.0),
+                ship_state
+            )),
+            WarpDriveKind::Natario => WarpDriveImpl::Natario(WarpDriveNatario {
+                radius: self.bubble_radius(),
+                sigma: self.bubble_sigma(),
+                u: self.u(),
+                x0: self.x0(),
+                t0: self.t0(),
+                epsilon: 0.0
+            })
+        }
+    }
+
+    pub(crate) fn set_u0_pure(&mut self, value: f64) {
         match self {
             WarpDriveImpl::Ours(w) => {
                 w.u0 = value;
@@ -43,122 +197,6 @@ pub struct PhysicsParameters {
 impl PhysicsParameters {
     pub fn warp_drive(&self) -> &WarpDriveImpl {
         &self.warp_drive
-    }
-
-    pub fn bubble_radius(&self) -> f64 {
-        match &self.warp_drive {
-            WarpDriveImpl::Ours(wd) => wd.get_radius(),
-            WarpDriveImpl::Natario(wd) => wd.get_radius()
-        }
-    }
-
-    pub fn bubble_sigma(&self) -> f64 {
-        match &self.warp_drive {
-            WarpDriveImpl::Ours(wd) => wd.get_sigma(),
-            WarpDriveImpl::Natario(wd) => wd.get_sigma()
-        }
-    }
-
-    pub fn u(&self) -> f64 {
-        match &self.warp_drive {
-            WarpDriveImpl::Ours(wd) => wd.get_u(),
-            WarpDriveImpl::Natario(wd) => wd.get_u()
-        }
-    }
-
-    pub fn u0(&self) -> Option<f64> {
-        match &self.warp_drive {
-            WarpDriveImpl::Ours(wd) => Some(wd.get_u0()),
-            WarpDriveImpl::Natario(_) => None
-        }
-    }
-
-    pub fn k0(&self) -> Option<f64> {
-        match &self.warp_drive {
-            WarpDriveImpl::Ours(wd) => Some(wd.get_k0()),
-            WarpDriveImpl::Natario(_) => None
-        }
-    }
-
-    pub fn deflector_sigma_pushout(&self) -> Option<f64> {
-        match &self.warp_drive {
-            WarpDriveImpl::Ours(wd) => Some(wd.get_deflector_sigma_pushout()),
-            WarpDriveImpl::Natario(_) => None
-        }
-    }
-
-    pub fn deflector_sigma_factor(&self) -> Option<f64> {
-        match &self.warp_drive {
-            WarpDriveImpl::Ours(wd) => Some(wd.get_deflector_sigma_factor()),
-            WarpDriveImpl::Natario(_) => None
-        }
-    }
-
-    pub fn deflector_back(&self) -> Option<f64> {
-        match &self.warp_drive {
-            WarpDriveImpl::Ours(wd) => Some(wd.get_deflector_back()),
-            WarpDriveImpl::Natario(_) => None
-        }
-    }
-    
-    pub fn set_bubble_radius(&mut self, value: f64) {
-        match &mut self.warp_drive {
-            WarpDriveImpl::Ours(wd) => wd.update_radius(value),
-            WarpDriveImpl::Natario(wd) => wd.update_radius(value)
-        }
-    }
-
-    pub fn set_bubble_sigma(&mut self, value: f64) {
-        match &mut self.warp_drive {
-            WarpDriveImpl::Ours(wd) => wd.update_sigma(value),
-            WarpDriveImpl::Natario(wd) => wd.update_sigma(value)
-        }
-    }
-
-    pub fn set_u(&mut self, value: f64, t: f64) {
-        match &mut self.warp_drive {
-            WarpDriveImpl::Ours(wd) => wd.update_u(t, value),
-            WarpDriveImpl::Natario(wd) => wd.update_u(t, value)
-        }
-    }
-
-    pub fn set_u0(&mut self, value: f64, ship_state: &mut ShipPhysics) {
-        match &mut self.warp_drive {
-            WarpDriveImpl::Ours(wd) => wd.update_u0(value, ship_state).expect("update_u0 failed"),
-            WarpDriveImpl::Natario(_) => {  }
-        }
-    }
-
-    pub fn set_u0_pure(&mut self, value: f64) {
-        self.warp_drive.set_u0_pure(value)
-    }
-
-    pub fn set_k0(&mut self, value: f64) {
-        match &mut self.warp_drive {
-            WarpDriveImpl::Ours(wd) => wd.update_k0(value),
-            WarpDriveImpl::Natario(_) => {  }
-        }
-    }
-
-    pub fn set_deflector_sigma_pushout(&mut self, value: f64) {
-        match &mut self.warp_drive {
-            WarpDriveImpl::Ours(wd) => wd.update_deflector_sigma_pushout(value),
-            WarpDriveImpl::Natario(_) => {  }
-        }
-    }
-
-    pub fn set_deflector_sigma_factor(&mut self, value: f64) {
-        match &mut self.warp_drive {
-            WarpDriveImpl::Ours(wd) => wd.update_deflector_sigma_factor(value),
-            WarpDriveImpl::Natario(_) => {  }
-        }
-    }
-
-    pub fn set_deflector_back(&mut self, value: f64) {
-        match &mut self.warp_drive {
-            WarpDriveImpl::Ours(wd) => wd.update_deflector_back(value),
-            WarpDriveImpl::Natario(_) => {  }
-        }
     }
     
     pub fn shut_down(&mut self, global_time: f64) {
