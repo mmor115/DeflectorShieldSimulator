@@ -23,7 +23,8 @@ def get_warp_defaults():
           "epsilon": 1e-12,
           "deflector_back": 0.0,
           "deflector_sigma_factor": 1.1,
-          "deflector_sigma_pushout": 1.0
+          "deflector_sigma_pushout": 1.0,
+          "warp_drive_kind": "ours"
         },
         "particle_settings": {
           "spawning_enabled": false,
@@ -136,6 +137,7 @@ class PhysicsConfig:
         self.deflector_back:float = physics_config_data["deflector_back"]
         self.deflector_sigma_factor:float = physics_config_data["deflector_sigma_factor"]
         self.deflector_sigma_pushout:float = physics_config_data["deflector_sigma_pushout"]
+        self.warp_drive_kind:str = physics_config_data.get("warp_drive_kind", "Ours")
 
     def assemble(self):
         return {
@@ -150,7 +152,8 @@ class PhysicsConfig:
             "epsilon":self.epsilon,
             "deflector_back":self.deflector_back,
             "deflector_sigma_factor":self.deflector_sigma_factor,
-            "deflector_sigma_pushout":self.deflector_sigma_pushout
+            "deflector_sigma_pushout":self.deflector_sigma_pushout,
+            "warp_drive_kind":self.warp_drive_kind,
         }
 
 
@@ -321,6 +324,22 @@ class WarpSim:
         self._init_from_jdata()
 
     @property
+    def radius(self):
+        return self.snapshots[0].global_config.physics_config.radius
+
+    @radius.setter
+    def radius(self,value):
+        self.snapshots[0].global_config.physics_config.radius = value
+
+    @property
+    def sigma(self):
+        return self.snapshots[0].global_config.physics_config.sigma
+
+    @sigma.setter
+    def sigma(self,value):
+        self.snapshots[0].global_config.physics_config.sigma = value
+
+    @property
     def deflector(self):
         return self.snapshots[0].global_config.physics_config.k0
 
@@ -335,6 +354,14 @@ class WarpSim:
     @deflector_sigma_pushout.setter
     def deflector_sigma_pushout(self, value):
         self.snapshots[0].global_config.physics_config.deflector_sigma_pushout = value
+
+    @property
+    def warp_drive_kind(self):
+        return self.snapshots[0].global_config.physics_config.warp_drive_kind
+
+    @warp_drive_kind.setter
+    def warp_drive_kind(self, value:str):
+        self.snapshots[0].global_config.physics_config.warp_drive_kind = value
 
     @property
     def deflector_sigma_factor(self):
@@ -377,7 +404,7 @@ class WarpSim:
         self.snapshots[0].ship_state.physics.vx = new_val
         self.snapshots[0].ship_state.physics.normalize(MASSIVE)
 
-    def add_particle(self, pos, vel, ty):
+    def add_particle(self, pos, vel, ty, trackme=False):
         pid = "%032d" % self.idseq
         self.idseq += 1
         particle_state = ParticleState({
@@ -385,6 +412,8 @@ class WarpSim:
             "id":pid,
             "particle_type":"Photon" if ty==ParticleType.PHOTON else "Massive"
         })
+        if trackme:
+            self.tagged_particles.append(pid)
         particle_state.physics.normalize(ty)
         self.snapshots[0].particle_states.append(particle_state)
         self.jdata["snapshots"][0]["particle_states"].append(particle_state.assemble())
