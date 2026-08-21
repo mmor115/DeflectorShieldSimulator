@@ -78,6 +78,16 @@ impl WarpDriveImpl {
         }
     }
 
+    /* The softening added to r^2 so that the metric functions stay finite at the bubble
+       centre. It must not be zero: shut_up() and resume() place the bubble exactly on the
+       ship, and the ship then sits at r = 0, where the derivatives of r divide by it. */
+    pub fn epsilon(&self) -> f64 {
+        match &self {
+            WarpDriveImpl::Ours(wd) => wd.epsilon,
+            WarpDriveImpl::Natario(wd) => wd.epsilon
+        }
+    }
+
     pub fn deflector_sigma_pushout(&self) -> Option<f64> {
         match &self {
             WarpDriveImpl::Ours(wd) => Some(wd.get_deflector_sigma_pushout()),
@@ -177,7 +187,7 @@ impl WarpDriveImpl {
                 u: self.u(),
                 x0: self.x0(),
                 t0: self.t0(),
-                epsilon: 0.0
+                epsilon: self.epsilon()
             })
         }
     }
@@ -242,5 +252,61 @@ impl Default for PhysicsParameters {
                 )
             )
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::game_systems::config::WarpDriveKind;
+    use deflector_core::types::ParticleState;
+
+    fn ship_at_origin() -> ShipPhysics {
+        ShipPhysics(ParticleState::from_column_slice(&[0., 0., 0., 0., 0., 0., 1.]))
+    }
+
+    /* shut_up() and resume() both place the bubble exactly on the ship, which puts the
+       ship at r = 0. The metric functions divide by r there, so the epsilon softening
+       has to survive a change of drive; switching used to reset it to zero, and the
+       shift vector went NaN on the first step after Shut up. */
+    #[test]
+    fn shift_vector_stays_finite_after_a_shutdown_cycle_on_natario() {
+        let mut ship = ship_at_origin();
+        let mut parameters = PhysicsParameters::default();
+
+        parameters.warp_drive = parameters.warp_drive
+                                          .new_from(WarpDriveKind::Natario, 0.0, &mut ship);
+
+        assert!(parameters.warp_drive.epsilon() > 0.0,
+                "changing drive dropped the epsilon softening");
+
+        let stashed = parameters.clone();
+        parameters.shut_down(1.0);
+        parameters.shut_up(2.0, &mut ship, &stashed);
+
+        let warp_drive = parameters.warp_drive.get_dynamic();
+        let q = nalgebra::Vector4::new(2.0, ship[0], ship[1], ship[2]);
+
+        assert!(warp_drive.vx(&q).is_finite(), "vx went NaN at the ship");
+        assert!(warp_drive.vy(&q).is_finite(), "vy went NaN at the ship");
+        assert!(warp_drive.vz(&q).is_finite(), "vz went NaN at the ship");
+    }
+
+    /* Every drive carries the softening, so the same has to hold going the other way. */
+    #[test]
+    fn changing_drive_preserves_epsilon_in_both_directions() {
+        let mut ship = ship_at_origin();
+        let mut parameters = PhysicsParameters::default();
+        let original = parameters.warp_drive.epsilon();
+
+        assert!(original > 0.0);
+
+        parameters.warp_drive = parameters.warp_drive
+                                          .new_from(WarpDriveKind::Natario, 0.0, &mut ship);
+        assert_eq!(parameters.warp_drive.epsilon(), original);
+
+        parameters.warp_drive = parameters.warp_drive
+                                          .new_from(WarpDriveKind::Ours, 0.0, &mut ship);
+        assert_eq!(parameters.warp_drive.epsilon(), original);
     }
 }
