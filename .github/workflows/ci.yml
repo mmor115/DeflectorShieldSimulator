@@ -92,13 +92,14 @@ jobs:
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Cache cargo artifacts
-        uses: Swatinem/rust-cache@v2
-
-      # Pinned, because the check below is a byte-for-byte diff and a different
-      # version of the generator would fail it for no real reason.
+      # A prebuilt binary rather than `cargo install`, which would spend minutes
+      # compiling the generator on every pull request and leaves $CARGO_HOME/bin off
+      # PATH for subsequent steps. Pinned, because the check below is a byte-for-byte
+      # diff and a different version of the generator would fail it for no real reason.
       - name: Install cargo-about
-        run: cargo install --locked cargo-about@0.9.2
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-about@0.9.2
 
       # THIRD-PARTY-NOTICES.md ships inside every release artifact, so a stale copy
       # means shipping notices that do not match the binary. Regenerate it and fail
