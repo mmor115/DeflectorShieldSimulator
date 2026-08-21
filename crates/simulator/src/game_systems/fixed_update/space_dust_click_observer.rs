@@ -21,6 +21,6 @@ pub fn space_dust_click_observer(mut trigger: Trigger<Pointer<Pressed>>,
     if tagged_particles.toggle(*id) {
         *mat = MeshMaterial2d(tagged_mat.clone());
     } else {
-        *mat = MeshMaterial2d(space_dust_materials.get_space_dust_color(&mut materials, state.z(), (&particle_type.0).into()));
+        *mat = MeshMaterial2d(space_dust_materials.get_space_dust_color(&mut materials, state.z(), &particle_type.0));
     }
 }

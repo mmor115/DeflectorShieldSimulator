@@ -160,12 +160,12 @@ impl WarpDriveImpl {
                 self.bubble_sigma(),
                 self.u(),
                 self.u0().unwrap_or_else(|| self.u()),
-                self.k0().unwrap_or_else(|| 0.1),
+                self.k0().unwrap_or(0.1),
                 self.x0(),
                 self.t0(),
-                self.deflector_sigma_pushout().unwrap_or_else(|| 0.8),
-                self.deflector_sigma_factor().unwrap_or_else(|| 1.0),
-                self.deflector_back().unwrap_or_else(|| 1.0),
+                self.deflector_sigma_pushout().unwrap_or(0.8),
+                self.deflector_sigma_factor().unwrap_or(1.0),
+                self.deflector_back().unwrap_or(1.0),
                 ship_state
             )),
             WarpDriveKind::Natario => WarpDriveImpl::Natario(WarpDriveNatario {
@@ -180,11 +180,9 @@ impl WarpDriveImpl {
     }
 
     pub(crate) fn set_u0_pure(&mut self, value: f64) {
-        match self {
-            WarpDriveImpl::Ours(w) => {
-                w.u0 = value;
-            }
-            _ => {}
+        /* Natario has no drag term, so there is nothing to set. */
+        if let WarpDriveImpl::Ours(w) = self {
+            w.u0 = value;
         }
     }
 }

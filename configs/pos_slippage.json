@@ -8,21 +8,34 @@
     "x0": 0.0,
     "t0": 0.0,
     "gamma": 0.0,
-    "epsilon": 1e-12
+    "epsilon": 1e-12,
+    "deflector_back": 1.0,
+    "deflector_sigma_factor": 1.0,
+    "deflector_sigma_pushout": 0.8,
+    "warp_drive_kind": "Ours"
   },
   "particle_settings": {
+    "spawning_enabled": true,
     "y_position_variance": 150.0,
     "z_position_variance": 0.0,
     "x_velocity_variance": 0.014563,
     "y_velocity_variance": 0.014563,
-    "z_velocity_variance": 0.0
+    "z_velocity_variance": 0.0,
+    "photon_chance": 0.0
   },
   "visual_settings": {
     "show_inner_bubble": true,
-    "show_outer_bubble": true
+    "show_outer_bubble": true,
+    "hide_untagged_particles": false
   },
   "shutdown_config": {
     "in_shutdown_state": false,
     "temporary_parameters": null
+  },
+  "validator_settings": {
+    "nan_validator": "Die",
+    "normalization_validator": "ExplodeParticle",
+    "normalized_tolerance": 1e-06,
+    "normalized_tolerance_power": -6
   }
 }

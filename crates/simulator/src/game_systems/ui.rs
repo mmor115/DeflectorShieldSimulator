@@ -19,6 +19,15 @@ use std::io::{BufReader, BufWriter, Write};
 use std::path::Path;
 use enum_ordinalize::Ordinalize;
 
+/// Shown in the About tab. Kept here so the strings appear once.
+const SOURCE_URL: &str = "https://github.com/max-morris/DeflectorShieldSimulator";
+const MANUAL_URL: &str = "https://max-morris.github.io/DeflectorShieldSimulator/manual/";
+const PAPER_CITATION: &str = concat!(
+    "L. T. Sanches, M. Morris and S. R. Brandt, \"Exploring Particle Geodesics in a ",
+    "Warp Drive Spacetime\", Classical and Quantum Gravity (accepted); ",
+    "arXiv:2608.08213 [gr-qc]."
+);
+
 pub struct UiPlugin;
 
 impl Plugin for UiPlugin {
@@ -72,13 +81,13 @@ pub struct UiState {
     dump_only_tagged_particles: bool
 }
 
-#[derive(Resource)]
+#[derive(Resource, Default)]
 pub struct ShutdownState {
     pub in_shutdown_state: bool,
     pub temporary_parameters: Option<PhysicsParameters>
 }
 
-#[derive(Resource)]
+#[derive(Resource, Default)]
 pub struct SaveLoadState {
     loaded_history: Option<SimulationHistory>
 }
@@ -90,7 +99,7 @@ pub struct SpeedControls {
     pub keep_up_warning: bool
 }
 
-#[derive(Resource, Serialize, Deserialize, Clone)]
+#[derive(Resource, Serialize, Deserialize, Clone, Default)]
 pub struct PauseControls {
     pub paused: bool
 }
@@ -193,37 +202,12 @@ impl Default for UiState {
     }
 }
 
-impl Default for ShutdownState {
-    fn default() -> Self {
-        Self {
-            in_shutdown_state: false,
-            temporary_parameters: None
-        }
-    }
-}
-
-impl Default for SaveLoadState {
-    fn default() -> Self {
-        Self {
-            loaded_history: None,
-        }
-    }
-}
-
 impl Default for SpeedControls {
     fn default() -> Self {
         Self {
             tick_rate_factor: 1.,
             need_apply: false,
             keep_up_warning: false
-        }
-    }
-}
-
-impl Default for PauseControls {
-    fn default() -> Self {
-        Self {
-            paused: false
         }
     }
 }
@@ -322,17 +306,14 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                     if ui.slider("Speed", 0.0, 0.9, &mut u_scratch) {
                         parameters.warp_drive.set_u(u_scratch, global_time);
 
-                        let u0 = parameters.warp_drive.u0();
-                        match u0 {
-                            Some(u0) => {
-                                if u0 < 0.1 || u0 > 0.9 {
-                                    parameters.warp_drive.set_u(prev_u, global_time);
-                                    ui.tooltip(|| {
-                                        ui.text_colored([1., 0., 0., 1.], "Shield Drag out of range!")
-                                    });
-                                }
-                            },
-                            None => { }
+                        /* The Natario drive has no shield drag, so there is nothing to
+                           keep in range for it. */
+                        if let Some(u0) = parameters.warp_drive.u0()
+                            && !(0.1..=0.9).contains(&u0) {
+                            parameters.warp_drive.set_u(prev_u, global_time);
+                            ui.tooltip(|| {
+                                ui.text_colored([1., 0., 0., 1.], "Shield Drag out of range!")
+                            });
                         }
                     }
                     if ui.is_item_hovered() {
@@ -474,31 +455,28 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                     ui.separator();
                     ui.text("Initial Velocity");
 
-                    if ui.slider("x-Velocity Spread", 0., 0.9, &mut particle_settings.x_velocity_variance) {
-                        if !particle_settings.validate_velocity() {
-                            particle_settings.x_velocity_variance = particle_settings.max_x_velocity();
-                            ui.tooltip(|| {
-                                ui.text_colored([1., 0., 0., 1.], "Normalized velocity is too great!")
-                            });
-                        }
+                    if ui.slider("x-Velocity Spread", 0., 0.9, &mut particle_settings.x_velocity_variance)
+                        && !particle_settings.validate_velocity() {
+                        particle_settings.x_velocity_variance = particle_settings.max_x_velocity();
+                        ui.tooltip(|| {
+                            ui.text_colored([1., 0., 0., 1.], "Normalized velocity is too great!")
+                        });
                     }
 
-                    if ui.slider("y-Velocity Spread", 0., 0.9, &mut particle_settings.y_velocity_variance) {
-                        if !particle_settings.validate_velocity() {
-                            particle_settings.y_velocity_variance = particle_settings.max_y_velocity();
-                            ui.tooltip(|| {
-                                ui.text_colored([1., 0., 0., 1.], "Normalized velocity is too great!")
-                            });
-                        }
+                    if ui.slider("y-Velocity Spread", 0., 0.9, &mut particle_settings.y_velocity_variance)
+                        && !particle_settings.validate_velocity() {
+                        particle_settings.y_velocity_variance = particle_settings.max_y_velocity();
+                        ui.tooltip(|| {
+                            ui.text_colored([1., 0., 0., 1.], "Normalized velocity is too great!")
+                        });
                     }
 
-                    if ui.slider("z-Velocity Spread", 0., 0.9, &mut particle_settings.z_velocity_variance) {
-                        if !particle_settings.validate_velocity() {
-                            particle_settings.z_velocity_variance = particle_settings.max_z_velocity();
-                            ui.tooltip(|| {
-                                ui.text_colored([1., 0., 0., 1.], "Normalized velocity is too great!")
-                            });
-                        }
+                    if ui.slider("z-Velocity Spread", 0., 0.9, &mut particle_settings.z_velocity_variance)
+                        && !particle_settings.validate_velocity() {
+                        particle_settings.z_velocity_variance = particle_settings.max_z_velocity();
+                        ui.tooltip(|| {
+                            ui.text_colored([1., 0., 0., 1.], "Normalized velocity is too great!")
+                        });
                     }
 
                     ui.text_colored(
@@ -673,7 +651,9 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                                 let mut oo = OpenOptions::new();
                                 oo.read(true)
                                   .write(true)
-                                  .create(true);
+                                  .create(true)
+                                  // Without this, a shorter dump leaves stale bytes from a longer one.
+                                  .truncate(true);
 
                                 match oo.open(path) {
                                     Ok(file) => {
@@ -794,7 +774,9 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                               .build();
 
                             if ui.button("Resume from End") {
-                                load_idx = Some(snapshots_len - 1);
+                                // saturating_sub keeps an empty history out of the range check below,
+                                // which reports it as an error instead of underflowing.
+                                load_idx = Some(snapshots_len.saturating_sub(1));
                             }
 
                             if let Some(load_idx) = load_idx {
@@ -937,6 +919,41 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                     if tolerance_slider.build(&mut validator_settings.normalized_tolerance_power) {
                         validator_settings.normalized_tolerance = 10f64.powi(validator_settings.normalized_tolerance_power);
                     }
+                }
+
+                /* AGPL section 5(d) asks an interactive program to display its legal
+                   notices. This tab is where they live, and it also carries the
+                   CC-BY attribution the ship sprite requires. */
+                if let Some(_tab) = ui.tab_item("About") {
+                    ui.text(format!("DeflectorShieldSimulator {}", env!("CARGO_PKG_VERSION")));
+                    ui.text("Max Morris, Lucas Timotheo Sanches, Steven Robert Brandt");
+                    ui.text("Louisiana State University");
+
+                    ui.separator();
+
+                    ui.text("Licensed under the GNU Affero General Public License,");
+                    ui.text("version 3 or later. This program comes with absolutely no");
+                    ui.text("warranty. You may redistribute it under those terms.");
+                    ui.text("Source:");
+                    ui.same_line();
+                    ui.text(SOURCE_URL);
+
+                    ui.separator();
+
+                    ui.text("If this simulator contributes to published research, cite:");
+                    ui.text_wrapped(PAPER_CITATION);
+
+                    ui.separator();
+
+                    ui.text("Ship sprite by arin48, CC-BY 4.0.");
+                    ui.text("opengameart.org/content/top-down-spaceships");
+                    ui.text("Third-party crate notices ship in THIRD-PARTY-NOTICES.md.");
+
+                    ui.separator();
+
+                    ui.text("Manual:");
+                    ui.same_line();
+                    ui.text(MANUAL_URL);
                 }
             }
         });

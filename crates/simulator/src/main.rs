@@ -1,3 +1,9 @@
+/* Bevy systems take one parameter per queried resource or component set, and those
+   parameter types are generic and long by construction. Both lints fire on almost every
+   system in this crate and neither has a fix that does not obscure the signature. */
+#![allow(clippy::too_many_arguments)]
+#![allow(clippy::type_complexity)]
+
 mod game_systems;
 mod physics;
 mod game_entities;
@@ -35,9 +41,9 @@ const PHYSICS_STEP_SIZE: f64 = 0.1;
 
 fn main() {
     App::new()
-        /* Serves the embedded assets/ tree through the default asset source, so the
-           load call in setup.rs needs no embedded:// prefix. Must be registered
-           before DefaultPlugins. */
+        /* Serves the embedded assets/ tree through the default asset source, so
+           asset_server.load("images/ship.png") needs no embedded:// prefix and the binary
+           carries its own sprite. This must precede DefaultPlugins, which adds AssetPlugin. */
         .add_plugins(EmbeddedAssetPlugin { mode: PluginMode::ReplaceDefault })
         .add_plugins(DefaultPlugins)
         .add_plugins(ImguiPlugin::default())

@@ -127,7 +127,7 @@ pub fn take_snapshot(timer: Res<PhysicsUpdateTimer>,
     let particle_states = particles.iter().map(|p| {
         SpaceDustStateSnapshot {
             physics: p.0.clone(),
-            id: p.1.clone(),
+            id: *p.1,
             particle_type: p.2.0
         }
     }).collect::<Vec<_>>();
