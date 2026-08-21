@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Max Morris, Lucas Timotheo Sanches and Steven Robert Brandt
+
 use bevy::prelude::{Deref, DerefMut, Resource, Timer, TimerMode};
 
 pub const BASE_TICK_RATE: f32 = 60.;

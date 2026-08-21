@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Max Morris, Lucas Timotheo Sanches and Steven Robert Brandt
+
 use crate::game_systems::timers::{PhysicsUpdateTimer, SpaceDustSpawnTimer, BASE_TICK_RATE};
 use crate::game_systems::ui::SpeedControls;
 use bevy::prelude::{Res, ResMut, Time};

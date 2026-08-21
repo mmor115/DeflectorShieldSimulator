@@ -1,0 +1,81 @@
+# cargo-deny configuration for DeflectorShieldSimulator.
+#
+# Run with `cargo deny check` (requires `cargo install cargo-deny`). CI runs the same
+# command; keep this file in sync with it rather than special-casing CI.
+#
+# Schema reference (cargo-deny 0.20, the version this file was written against):
+# https://embarkstudios.github.io/cargo-deny/index.html
+
+[graph]
+# Only Linux, macOS and Windows desktop targets ship a build of the simulator.
+targets = [
+    "x86_64-unknown-linux-gnu",
+    "x86_64-apple-darwin",
+    "aarch64-apple-darwin",
+    "x86_64-pc-windows-msvc",
+]
+
+# https://embarkstudios.github.io/cargo-deny/checks/advisories/cfg.html
+[advisories]
+db-urls = ["https://github.com/rustsec/advisory-db"]
+ignore = [
+    # No advisories are ignored. Add entries here only with a `reason`,
+    # e.g. { id = "RUSTSEC-0000-0000", reason = "why this does not affect us" }.
+]
+
+# https://embarkstudios.github.io/cargo-deny/checks/licenses/cfg.html
+[licenses]
+# This list is a pinned audit result, not a policy switch: it names exactly the SPDX
+# license identifiers found in `cargo metadata` across the whole workspace dependency
+# tree (crates/simulator and crates/manual together) at the time it was written.
+#
+# Adding an entry here is a deliberate, one-at-a-time decision, not routine maintenance:
+# before adding a license, confirm the new dependency actually needs it (re-run the audit
+# below) and confirm the license is compatible with this workspace's own
+# AGPL-3.0-or-later license. Do not add a copyleft or source-disclosure license here
+# without checking compatibility first, and do not widen this list to "fix CI" without
+# doing that check.
+#
+# Re-audit with:
+#   cargo metadata --format-version 1 | jq -r '.packages[] | .license // "NONE"' | sort -u
+allow = [
+    "MIT",
+    "Apache-2.0",
+    "Apache-2.0 WITH LLVM-exception",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "Zlib",
+    "0BSD",
+    "MIT-0",
+    "Unlicense",
+    "CC0-1.0",
+    "BSL-1.0",
+    "Unicode-3.0",
+    "Unicode-DFS-2016",
+    # This workspace's own crates (deflector-shield-simulator, deflector-manual).
+    "AGPL-3.0-or-later",
+]
+confidence-threshold = 0.8
+
+# Per-crate license overrides. None are needed: every crate in the tree declares a
+# license covered by the `allow` list above, including `deflector-core`, which upstream
+# published under AGPL-3.0-or-later in commit 802671e — the revision this workspace
+# pins (https://github.com/lucass-carneiro/DeflectorShields).
+exceptions = []
+
+# https://embarkstudios.github.io/cargo-deny/checks/bans/cfg.html
+[bans]
+multiple-versions = "warn"
+# crates/simulator/Cargo.toml pins `log = "*"` deliberately (see the comment there), so
+# wildcard dependencies are allowed rather than denied.
+wildcards = "allow"
+
+# https://embarkstudios.github.io/cargo-deny/checks/sources/cfg.html
+[sources]
+unknown-registry = "deny"
+unknown-git = "deny"
+allow-registry = ["https://github.com/rust-lang/crates.io-index"]
+# The physics engine backing the simulator (`deflector-core`) is pulled straight from
+# its git repository; every other dependency comes from crates.io.
+allow-git = ["https://github.com/lucass-carneiro/DeflectorShields"]

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Max Morris, Lucas Timotheo Sanches and Steven Robert Brandt
+
 use crate::game_systems::ui::{ParticleSettings, ShutdownState, ValidatorSettings, VisualSettings};
 use crate::physics::physics_parameters::{PhysicsParameters, WarpDriveImpl};
 use deflector_core::wd_natario::WarpDriveNatario;

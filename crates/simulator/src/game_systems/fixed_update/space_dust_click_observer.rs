@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Max Morris, Lucas Timotheo Sanches and Steven Robert Brandt
+
 use bevy::prelude::*;
 use deflector_core::types::ParticleStateComponents;
 use crate::game_entities::space_dust::{ParticleTypeComponent, SpaceDustColorMaterials, SpaceDustId, SpaceDustPhysics, TaggedSpaceDustMaterialAsset};

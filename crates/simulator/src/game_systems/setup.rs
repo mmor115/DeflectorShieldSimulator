@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Max Morris, Lucas Timotheo Sanches and Steven Robert Brandt
+
 use crate::game_entities::bubbles::{InnerBubble, OuterBubble};
 use crate::game_entities::ship::{ShipEntity, ShipImageAsset, ShipPhysics};
 use crate::game_entities::space_dust::{SpaceDustColorMaterials, SpaceDustMesh, TaggedSpaceDustMaterialAsset};
