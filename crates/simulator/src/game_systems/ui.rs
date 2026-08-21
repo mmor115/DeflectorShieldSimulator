@@ -14,7 +14,7 @@ use bevy::app::{App, PostUpdate};
 use bevy::math::Vec3Swizzles;
 use bevy::prelude::*;
 use bevy_mod_imgui::ImguiContext;
-use imgui::{SliderFlags, StyleColor};
+use imgui::{ItemHoveredFlags, SliderFlags, StyleColor};
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::fs::OpenOptions;
@@ -344,7 +344,10 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                                 let mut dummy = 0.0;
                                 ui.slider("Drag", 0.0, 0.9, &mut dummy);
 
-                                if ui.is_item_hovered() {
+                                /* Hover is not reported for disabled items unless this
+                                   flag is passed, and the whole point of this tooltip is
+                                   to explain why the item is disabled. */
+                                if ui.is_item_hovered_with_flags(ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
                                     ui.tooltip_text("Selected warp drive does not use this parameter.");
                                 }
                             });
@@ -366,7 +369,10 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                                 let mut dummy = 0.0;
                                 ui.slider("Deflection Strength", 0.0, 0.9, &mut dummy);
 
-                                if ui.is_item_hovered() {
+                                /* Hover is not reported for disabled items unless this
+                                   flag is passed, and the whole point of this tooltip is
+                                   to explain why the item is disabled. */
+                                if ui.is_item_hovered_with_flags(ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
                                     ui.tooltip_text("Selected warp drive does not use this parameter.");
                                 }
                             });
@@ -385,7 +391,10 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                                 let mut dummy = 0.0;
                                 ui.slider("Sigma Pushout", 0.0, 4., &mut dummy);
 
-                                if ui.is_item_hovered() {
+                                /* Hover is not reported for disabled items unless this
+                                   flag is passed, and the whole point of this tooltip is
+                                   to explain why the item is disabled. */
+                                if ui.is_item_hovered_with_flags(ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
                                     ui.tooltip_text("Selected warp drive does not use this parameter.");
                                 }
                             });
@@ -404,7 +413,10 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                                 let mut dummy = 0.0;
                                 ui.slider("Sigma Factor", 0.0, 4., &mut dummy);
 
-                                if ui.is_item_hovered() {
+                                /* Hover is not reported for disabled items unless this
+                                   flag is passed, and the whole point of this tooltip is
+                                   to explain why the item is disabled. */
+                                if ui.is_item_hovered_with_flags(ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
                                     ui.tooltip_text("Selected warp drive does not use this parameter.");
                                 }
                             });
@@ -423,7 +435,10 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                                 let mut dummy = 0.0;
                                 ui.slider("Deflector Back", 0.0, 1., &mut dummy);
 
-                                if ui.is_item_hovered() {
+                                /* Hover is not reported for disabled items unless this
+                                   flag is passed, and the whole point of this tooltip is
+                                   to explain why the item is disabled. */
+                                if ui.is_item_hovered_with_flags(ItemHoveredFlags::ALLOW_WHEN_DISABLED) {
                                     ui.tooltip_text("Selected warp drive does not use this parameter.");
                                 }
                             });
