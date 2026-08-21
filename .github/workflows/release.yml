@@ -342,6 +342,13 @@ jobs:
           # user-defined secret.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
+          # A tag with a hyphen in it is a pre-release: v0.1.0-rc1 and the like.
+          # Those are published as drafts so a dry run of this workflow does not
+          # put a release in front of users, and marked as pre-releases so that
+          # releases/latest/download keeps pointing at the last real version.
+          # Publishing the draft is a manual step in the releases page.
+          draft: ${{ contains(github.ref_name, '-') }}
+          prerelease: ${{ contains(github.ref_name, '-') }}
           files: |
             dist/DeflectorShieldSimulator-x86_64.AppImage
             dist/DeflectorShieldSimulator-linux-x86_64.tar.gz
