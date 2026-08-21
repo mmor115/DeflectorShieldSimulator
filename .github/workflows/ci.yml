@@ -88,3 +88,24 @@ jobs:
         uses: EmbarkStudios/cargo-deny-action@v2
         with:
           command: check licenses bans sources
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo artifacts
+        uses: Swatinem/rust-cache@v2
+
+      # Pinned, because the check below is a byte-for-byte diff and a different
+      # version of the generator would fail it for no real reason.
+      - name: Install cargo-about
+        run: cargo install --locked cargo-about@0.9.2
+
+      # THIRD-PARTY-NOTICES.md ships inside every release artifact, so a stale copy
+      # means shipping notices that do not match the binary. Regenerate it and fail
+      # if the committed file differs; `cargo about generate about.hbs -o
+      # THIRD-PARTY-NOTICES.md` is the fix.
+      - name: Check THIRD-PARTY-NOTICES.md is current
+        run: |
+          set -euo pipefail
+          cargo about generate about.hbs -o /tmp/notices-regenerated.md
+          diff -u THIRD-PARTY-NOTICES.md /tmp/notices-regenerated.md
