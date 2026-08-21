@@ -57,6 +57,23 @@ After adding a particle, `add_particle` normalizes its velocity for its type:
 
 Running the file directly, with `python warpsim.py`, executes a demo under `if __name__ == "__main__":`. That demo reads `VISUALIZER_HOME_DIR` from the environment and writes its generated file to `$VISUALIZER_HOME_DIR/idump.json`. Set that variable before running the script this way, or it raises `KeyError`.
 
+## `scripts/warpgen.py`
+
+`warpgen.py` is a worked example of building an input file rather than reading one. It
+configures a Natario run, places a line of three tagged particles ahead of the ship and
+a triad of three more on the bubble surface at 120 degree spacing, and writes the result.
+
+```sh
+python3 warpgen.py -o idump.json
+```
+
+The output path also reads from the `OUTPUT` environment variable, and defaults to
+`idump.json`. Load the file with **Load History** and then **Resume from Start** to run
+it; see [Run a reproducible replay](replays.html).
+
+Copy it and edit the particle placement to set up a case of your own. It imports only
+`warpsim`, `math`, `os`, `sys` and `argparse`.
+
 ## `scripts/warpplot.py`
 
 `warpplot.py` plots trajectories from a dump with matplotlib. It needs `matplotlib`, `numpy` and `pandas`, and on Linux it renders its labels with LaTeX, so a working TeX installation is required there as well.

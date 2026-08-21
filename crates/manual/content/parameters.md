@@ -26,18 +26,18 @@ The control is disabled while the bubble is shut down.
 | **Speed** | 0.0 to 0.9 | 0.5 | `u` | The bubble's speed. Raising it also raises **Drag** by the same amount. |
 | **Drag** | 0.0 to 0.9 | 0.5 | `u0` | How far the ship's velocity lags behind the bubble. The ship's x-velocity is `u - u0`. |
 | **Deflection Strength** | 0.0 to 0.9 | 0.1 | `k0` | The shield's deflection strength. |
-| **Sigma Pushout** | 0.0 to 4.0 | 0.8 | `deflector_sigma_pushout` | How far beyond **Radius** the deflecting shell sits, in multiples of **Sigma**. The shell is centred at $R + p\,\sigma$. |
-| **Sigma Factor** | 0.0 to 4.0 | 1.0 | `deflector_sigma_factor` | How thick the deflecting shell is, in multiples of **Sigma**. The shell reaches $q\,\sigma$ to either side of its centre. |
+| **Sigma Pushout** | 0.0 to 4.0 | 0.8 | `deflector_sigma_pushout` | How far beyond **Radius** the deflecting shell sits, in multiples of **Sigma**. The shell is centered at $R + p\,\sigma$. `1.0` reproduces the fixed shell of the published metric; the default of `0.8` is deliberate, see [The deflector shield](deflector-shield.html). |
+| **Sigma Factor** | 0.0 to 4.0 | 1.0 | `deflector_sigma_factor` | How thick the deflecting shell is, in multiples of **Sigma**. The shell reaches $q\,\sigma$ to either side of its center. |
 | **Deflector Back** | 0.0 to 1.0 | 1.0 | `deflector_back` | `1.0` deflects all round the ship. `0.0` deflects ahead of the ship only and switches off behind it. Intermediate values interpolate. |
 
 > [!NOTE]
 > **Drag**, **Deflection Strength**, **Sigma Pushout**, **Sigma Factor** and **Deflector
 > Back** belong to the CCT drive only. Select **Natario** on the Drive tab and all five
-> grey out, showing "Selected warp drive does not use this parameter." on hover. The
+> gray out, showing "Selected warp drive does not use this parameter." on hover. The
 > defaults listed above are the values the CCT drive starts from.
 
 > [!NOTE]
-> The source marks these three fields `// TODO: Document`. Their behaviour is derived
+> The source marks these three fields `// TODO: Document`. Their behavior is derived
 > here from the deflector function in `deflector-core` and from the published metric. The
 > paper fixes the shell at $R + \sigma$ with a reach of $\sigma$, which corresponds to
 > **Sigma Pushout** `1.0` and **Sigma Factor** `1.0`. See
