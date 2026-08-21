@@ -100,6 +100,17 @@ bump centred on the sphere $r = r_0$ with a reach of $s_0$ to either side. In wo
 > Pushout** is `0.8`, which places the shell slightly inside the published position. Set
 > both sliders to `1.0` to reproduce the geometry in the paper.
 
+The default of `0.8` is deliberate, and it is chosen for the interactive case rather
+than the published one. At `1.0`, with the rest of the shipped defaults, particles
+gather in front of the ship instead of sliding around it: the shell sits far enough out
+that arriving particles meet it close to head-on and are held there rather than turned
+aside. Pulling it in to `0.8` restores the sliding behaviour, which is what makes the
+deflection legible on screen.
+
+That is a statement about the default configuration, not about the physics. Nothing
+stops you setting `1.0`, and you must set it to reproduce the paper. If you do and see
+particles piling up ahead of the ship, that is this effect and not a fault.
+
 ## Front-only deflection
 
 The last factor decides whether the shield acts all the way around or only ahead of the
@@ -174,6 +185,14 @@ them into a configuration file and load it. See
 | **Sigma Factor** | `1.0` |
 | **Deflection Strength** | `0.9` for the full shield, `0.45` for a gentler one |
 | **Deflector Back** | `0` for front-only, `1` for all-round |
+
+> [!NOTE]
+> Every value in that table is stated in the paper except **Sigma Pushout** and **Sigma
+> Factor**, which are derived. The paper has no such parameters: its deflector shell is
+> written as a fixed expression centred on $R + \sigma$ with a reach of $\sigma$. Those
+> two sliders are the simulator's generalisation of that fixed shell, and `1.0` and
+> `1.0` are the settings at which the generalisation collapses back to the published
+> form.
 
 The paper's preferred case runs at a slight negative slippage, $u_s = -0.01$, which means
 setting **Drag** to $u_b - u_s = 0.51$. Its debris fields give the incoming particles

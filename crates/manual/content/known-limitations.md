@@ -31,8 +31,8 @@ drive in the configuration file rather than in the UI avoids the problem entirel
 `scripts/warpplot.py` imports a module named `danger` for its directory paths, and that
 module is not part of this repository. The script fails at import.
 
-`scripts/warpsim.py`, which is the documented analysis entry point, has no such import
-and works as shipped. See [Analyse dumps with warpsim.py](analysis.html).
+`scripts/warpsim.py` and `scripts/warpgen.py` have no such import and work as shipped.
+See [Analyse dumps with warpsim.py](analysis.html).
 
 ## A bad ship state always terminates the program
 
