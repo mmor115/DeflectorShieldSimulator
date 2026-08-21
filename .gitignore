@@ -13,3 +13,6 @@
 sim.json
 dump.json
 dump.bin
+
+# Python bytecode from the analysis scripts.
+__pycache__/
