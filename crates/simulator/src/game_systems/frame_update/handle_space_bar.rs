@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Max Morris, Lucas Timotheo Sanches, and Steven R. Brandt
+
 use bevy::input::keyboard::KeyboardInput;
 use bevy::prelude::*;
 use bevy_mod_imgui::ImguiContext;

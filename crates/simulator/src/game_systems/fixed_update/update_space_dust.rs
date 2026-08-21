@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Max Morris, Lucas Timotheo Sanches, and Steven R. Brandt
+
 use crate::game_entities::ship::Ship;
 use crate::game_entities::space_dust::{ParticleTypeComponent, SpaceDust, SpaceDustColorMaterials, SpaceDustId, SpaceDustPhysics, TaggedSpaceDustMaterialAsset};
 use crate::game_systems::tagging::TaggedParticles;

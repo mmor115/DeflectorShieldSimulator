@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Max Morris, Lucas Timotheo Sanches, and Steven R. Brandt
+
 use bevy::prelude::*;
 use rand::Rng;
 use rand_xoshiro::rand_core::{RngCore, SeedableRng};

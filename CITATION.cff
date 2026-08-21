@@ -1,0 +1,47 @@
+cff-version: 1.2.0
+message: >-
+  If you use this software, please cite both the accompanying paper (see
+  preferred-citation) and this software itself using the metadata below.
+type: software
+title: DeflectorShieldSimulator
+abstract: >-
+  An interactive simulator for particle geodesics in a warp-drive
+  deflector-shield spacetime, built to accompany the paper "Exploring
+  Particle Geodesics in a Warp Drive Spacetime".
+version: 0.1.0
+date-released: 2026-08-21
+license: AGPL-3.0-or-later
+repository-code: https://github.com/max-morris/DeflectorShieldSimulator
+url: https://max-morris.github.io/DeflectorShieldSimulator/
+authors:
+  - given-names: Max
+    family-names: Morris
+    affiliation: Louisiana State University
+  - given-names: Lucas Timotheo
+    family-names: Sanches
+  - given-names: Steven R.
+    family-names: Brandt
+keywords:
+  - warp drive
+  - general relativity
+  - geodesics
+  - Alcubierre
+  - simulation
+preferred-citation:
+  type: article
+  title: Exploring Particle Geodesics in a Warp Drive Spacetime
+  journal: arXiv preprint arXiv:2608.08213
+  year: 2026
+  authors:
+    - given-names: Lucas Timotheo
+      family-names: Sanches
+    - given-names: Max
+      family-names: Morris
+      affiliation: Louisiana State University
+    - given-names: Steven Robert
+      family-names: Brandt
+  identifiers:
+    - type: other
+      value: "arXiv:2608.08213"
+      description: arXiv identifier
+  notes: Accepted in Classical and Quantum Gravity.

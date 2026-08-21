@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Max Morris, Lucas Timotheo Sanches, and Steven R. Brandt
+
 use crate::game_entities::explosion::{ExplosionEntity, ExplosionMesh};
 use crate::game_entities::ship::ShipPhysics;
 use crate::game_entities::space_dust::{ParticleTypeComponent, SpaceDustId, SpaceDustPhysics};

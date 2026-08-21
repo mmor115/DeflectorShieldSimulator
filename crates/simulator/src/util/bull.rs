@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Max Morris, Lucas Timotheo Sanches, and Steven R. Brandt
+
 use serde::{Serialize, Serializer};
 
 pub enum Bull<'a, O, B> where &'a O: Into<B> {

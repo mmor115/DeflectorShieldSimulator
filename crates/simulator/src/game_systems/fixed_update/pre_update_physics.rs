@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Max Morris, Lucas Timotheo Sanches, and Steven R. Brandt
+
 use crate::game_systems::timers::PhysicsUpdateTimer;
 use crate::physics::physics_manager::PhysicsManager;
 use bevy::prelude::{Res, ResMut, Time};

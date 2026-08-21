@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Max Morris, Lucas Timotheo Sanches, and Steven R. Brandt
+
 use crate::game_entities::ship::{Ship, ShipEntity, ShipImageAsset, ShipPhysics};
 use crate::game_entities::space_dust::{SpaceDust, SpaceDustColorMaterials, SpaceDustEntity, SpaceDustMesh, TaggedSpaceDustMaterialAsset};
 use crate::game_systems::config::{GlobalConfig, WarpDriveKind};
@@ -926,7 +929,7 @@ fn ui(mut imgui_ctx: NonSendMut<ImguiContext>,
                    CC-BY attribution the ship sprite requires. */
                 if let Some(_tab) = ui.tab_item("About") {
                     ui.text(format!("DeflectorShieldSimulator {}", env!("CARGO_PKG_VERSION")));
-                    ui.text("Max Morris, Lucas Timotheo Sanches, Steven Robert Brandt");
+                    ui.text("Max Morris, Lucas Timotheo Sanches, and Steven R. Brandt");
                     ui.text("Louisiana State University");
 
                     ui.separator();
