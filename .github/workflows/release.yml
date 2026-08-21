@@ -1,0 +1,370 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  linux:
+    name: Linux (AppImage + tarball)
+    runs-on: ubuntu-latest
+    # Building inside an ubuntu:22.04 container (glibc 2.35) rather than on the
+    # ubuntu-22.04 runner label pins the *minimum* glibc our binary links against,
+    # which is what makes the AppImage portable to older distros. The runner
+    # label is being deprecated (deprecation begins September 2026), but a
+    # container image tag has no such lifecycle, so we pin the container instead.
+    container: ubuntu:22.04
+    env:
+      # Lets nested AppImages (the linuxdeploy plugin, and the appimagetool it
+      # invokes internally) run without FUSE, since containers have no /dev/fuse.
+      APPIMAGE_EXTRACT_AND_RUN: "1"
+      ARCH: x86_64
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install system dependencies
+        shell: bash
+        run: |
+          set -euo pipefail
+          apt-get update
+          apt-get install -y --no-install-recommends \
+            build-essential \
+            pkg-config \
+            curl \
+            file \
+            git \
+            ca-certificates \
+            imagemagick \
+            libx11-dev \
+            libxcursor-dev \
+            libxi-dev \
+            libxrandr-dev \
+            libxkbcommon-dev \
+            libasound2-dev \
+            libudev-dev \
+            libwayland-dev \
+            libxcb-render0-dev \
+            libxcb-shape0-dev \
+            libxcb-xfixes0-dev
+          # Note: libfuse2 is deliberately NOT installed. We invoke every
+          # AppImage tool below with --appimage-extract-and-run instead, so
+          # FUSE support in the container is never required.
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo artifacts
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build
+        shell: bash
+        run: cargo build --release -p deflector-shield-simulator --features wayland
+
+      - name: Assemble AppDir
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          mkdir -p AppDir/usr/bin
+          cp target/release/deflector-shield-simulator AppDir/usr/bin/deflector-shield-simulator
+
+          mkdir -p AppDir/usr/share/applications
+          cat > AppDir/usr/share/applications/deflector-shield-simulator.desktop <<'EOF'
+          [Desktop Entry]
+          Type=Application
+          Name=Deflector Shield Simulator
+          Comment=Interactive simulator for particle geodesics in a warp-drive deflector-shield spacetime
+          Exec=deflector-shield-simulator
+          Icon=deflector-shield-simulator
+          Categories=Science;Education;
+          Terminal=false
+          EOF
+
+          mkdir -p AppDir/usr/share/icons/hicolor/256x256/apps
+          # Pad/resize the ship artwork onto a square transparent canvas; the source
+          # image is not guaranteed to already be square.
+          convert crates/simulator/assets/images/ship.png \
+            -resize 256x256 -background none -gravity center -extent 256x256 \
+            AppDir/usr/share/icons/hicolor/256x256/apps/deflector-shield-simulator.png
+
+          cat > AppDir/AppRun <<'EOF'
+          #!/bin/sh
+          HERE="$(dirname "$(readlink -f "${0}")")"
+          export LD_LIBRARY_PATH="${HERE}/usr/lib:${LD_LIBRARY_PATH}"
+          exec "${HERE}/usr/bin/deflector-shield-simulator" "$@"
+          EOF
+          chmod +x AppDir/AppRun
+
+      - name: Download linuxdeploy tools
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fL -o linuxdeploy-x86_64.AppImage \
+            https://github.com/linuxdeploy/linuxdeploy/releases/download/continuous/linuxdeploy-x86_64.AppImage
+          curl -fL -o linuxdeploy-plugin-appimage-x86_64.AppImage \
+            https://github.com/linuxdeploy/linuxdeploy-plugin-appimage/releases/download/continuous/linuxdeploy-plugin-appimage-x86_64.AppImage
+          chmod +x linuxdeploy-x86_64.AppImage linuxdeploy-plugin-appimage-x86_64.AppImage
+
+      - name: Build AppImage
+        shell: bash
+        env:
+          # Version-free, fixed name: the homepage links to
+          # releases/latest/download/DeflectorShieldSimulator-x86_64.AppImage.
+          OUTPUT: DeflectorShieldSimulator-x86_64.AppImage
+        run: |
+          set -euo pipefail
+          export PATH="$PWD:$PATH"
+          # --appimage-extract-and-run: run linuxdeploy (and, via
+          # APPIMAGE_EXTRACT_AND_RUN above, the plugins it shells out to)
+          # by extracting each AppImage rather than mounting it with FUSE,
+          # since this container has no FUSE support.
+          ./linuxdeploy-x86_64.AppImage \
+            --appimage-extract-and-run \
+            --appdir AppDir \
+            --output appimage
+          ls -la DeflectorShieldSimulator-x86_64.AppImage
+
+      - name: Build tarball
+        shell: bash
+        run: |
+          set -euo pipefail
+          staging=deflector-shield-simulator-linux-x86_64
+          mkdir -p "$staging"
+          cp target/release/deflector-shield-simulator "$staging/"
+          cp LICENSE "$staging/"
+          cp THIRD-PARTY-NOTICES.md "$staging/"
+          cp README.md "$staging/"
+          tar czf DeflectorShieldSimulator-linux-x86_64.tar.gz "$staging"
+
+      - name: Upload AppImage
+        uses: actions/upload-artifact@v4
+        with:
+          name: DeflectorShieldSimulator-x86_64.AppImage
+          path: DeflectorShieldSimulator-x86_64.AppImage
+          if-no-files-found: error
+
+      - name: Upload tarball
+        uses: actions/upload-artifact@v4
+        with:
+          name: DeflectorShieldSimulator-linux-x86_64.tar.gz
+          path: DeflectorShieldSimulator-linux-x86_64.tar.gz
+          if-no-files-found: error
+
+  windows:
+    name: Windows
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-msvc
+
+      - name: Cache cargo artifacts
+        uses: Swatinem/rust-cache@v2
+
+      # NOTE on the C runtime: .cargo/config.toml sets
+      #   rustflags = ["-C", "target-feature=+crt-static"]
+      # for the x86_64-pc-windows-msvc target, so the resulting binary statically
+      # links the VC++ runtime and end users do not need to install the VC++
+      # Redistributable. If a future dependency's ImGui C++ translation unit
+      # fails to link against a static CRT, the fallback is to remove that
+      # rustflag from .cargo/config.toml and instead document the VC++
+      # Redistributable as a runtime requirement in the release notes.
+      - name: Build
+        run: cargo build --release -p deflector-shield-simulator
+
+      - name: Assemble zip
+        shell: pwsh
+        run: |
+          $staging = "staging"
+          New-Item -ItemType Directory -Path $staging | Out-Null
+          Copy-Item target/release/deflector-shield-simulator.exe "$staging/DeflectorShieldSimulator.exe"
+          Copy-Item LICENSE $staging/
+          Copy-Item THIRD-PARTY-NOTICES.md $staging/
+          Copy-Item README.md $staging/
+          Compress-Archive -Path "$staging/*" -DestinationPath DeflectorShieldSimulator-windows-x86_64.zip
+
+      - name: Upload zip
+        uses: actions/upload-artifact@v4
+        with:
+          name: DeflectorShieldSimulator-windows-x86_64.zip
+          path: DeflectorShieldSimulator-windows-x86_64.zip
+          if-no-files-found: error
+
+  macos:
+    name: macOS (universal)
+    runs-on: macos-latest
+    env:
+      MACOSX_DEPLOYMENT_TARGET: "11.0"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Add Apple targets
+        run: rustup target add x86_64-apple-darwin aarch64-apple-darwin
+
+      - name: Cache cargo artifacts
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build (Intel)
+        run: cargo build --release -p deflector-shield-simulator --target x86_64-apple-darwin
+
+      - name: Build (Apple Silicon)
+        run: cargo build --release -p deflector-shield-simulator --target aarch64-apple-darwin
+
+      - name: Create universal binary
+        run: |
+          set -euo pipefail
+          mkdir -p universal
+          # lipo glues the two single-architecture binaries into one "fat"
+          # Mach-O binary that runs natively on both Intel and Apple Silicon Macs.
+          lipo -create -output universal/deflector-shield-simulator \
+            target/x86_64-apple-darwin/release/deflector-shield-simulator \
+            target/aarch64-apple-darwin/release/deflector-shield-simulator
+
+      - name: Build .icns
+        run: |
+          set -euo pipefail
+          iconset=DeflectorShieldSimulator.iconset
+          mkdir -p "$iconset"
+          src=crates/simulator/assets/images/ship.png
+          for entry in "16 icon_16x16" "32 icon_16x16@2x" "32 icon_32x32" "64 icon_32x32@2x" \
+                       "128 icon_128x128" "256 icon_128x128@2x" "256 icon_256x256" \
+                       "512 icon_256x256@2x" "512 icon_512x512" "1024 icon_512x512@2x"; do
+            size="${entry% *}"
+            name="${entry#* }"
+            sips -z "$size" "$size" "$src" --out "$iconset/$name.png" > /dev/null
+          done
+          iconutil -c icns "$iconset" -o DeflectorShieldSimulator.icns
+
+      - name: Assemble .app bundle
+        run: |
+          set -euo pipefail
+          app=DeflectorShieldSimulator.app
+          mkdir -p "$app/Contents/MacOS" "$app/Contents/Resources"
+
+          cp universal/deflector-shield-simulator "$app/Contents/MacOS/DeflectorShieldSimulator"
+          chmod +x "$app/Contents/MacOS/DeflectorShieldSimulator"
+
+          cp DeflectorShieldSimulator.icns "$app/Contents/Resources/"
+          cp LICENSE "$app/Contents/Resources/"
+          cp THIRD-PARTY-NOTICES.md "$app/Contents/Resources/"
+
+          version="${GITHUB_REF_NAME#v}"
+
+          cat > "$app/Contents/Info.plist" <<EOF
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+              <key>CFBundleName</key>
+              <string>DeflectorShieldSimulator</string>
+              <key>CFBundleDisplayName</key>
+              <string>Deflector Shield Simulator</string>
+              <key>CFBundleExecutable</key>
+              <string>DeflectorShieldSimulator</string>
+              <key>CFBundleIdentifier</key>
+              <string>io.github.max-morris.DeflectorShieldSimulator</string>
+              <key>CFBundleShortVersionString</key>
+              <string>${version}</string>
+              <key>CFBundlePackageType</key>
+              <string>APPL</string>
+              <key>LSMinimumSystemVersion</key>
+              <string>11.0</string>
+              <key>NSHighResolutionCapable</key>
+              <true/>
+              <key>CFBundleIconFile</key>
+              <string>DeflectorShieldSimulator</string>
+          </dict>
+          </plist>
+          EOF
+
+          # Ad-hoc sign (no Apple Developer certificate is available in CI) so
+          # the bundle has a valid code signature and can be launched at all;
+          # it is still unnotarized, so Gatekeeper will warn on first launch
+          # (documented in the release notes).
+          codesign --force --deep --sign - "$app"
+
+      - name: Create dmg
+        run: |
+          set -euo pipefail
+          staging=dmg-staging
+          mkdir -p "$staging"
+          cp -R DeflectorShieldSimulator.app "$staging/"
+          ln -s /Applications "$staging/Applications"
+          hdiutil create -volname "DeflectorShieldSimulator" \
+            -srcfolder "$staging" \
+            -ov -format UDZO \
+            DeflectorShieldSimulator-macos-universal.dmg
+
+      - name: Upload dmg
+        uses: actions/upload-artifact@v4
+        with:
+          name: DeflectorShieldSimulator-macos-universal.dmg
+          path: DeflectorShieldSimulator-macos-universal.dmg
+          if-no-files-found: error
+
+  release:
+    name: Publish release
+    needs: [linux, windows, macos]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: "DeflectorShieldSimulator-*"
+          path: dist
+          merge-multiple: true
+
+      - name: List downloaded files
+        run: ls -la dist
+
+      - name: Create GitHub release
+        uses: softprops/action-gh-release@v2
+        env:
+          # The automatically-provisioned token for this workflow run; not a
+          # user-defined secret.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          files: |
+            dist/DeflectorShieldSimulator-x86_64.AppImage
+            dist/DeflectorShieldSimulator-linux-x86_64.tar.gz
+            dist/DeflectorShieldSimulator-windows-x86_64.zip
+            dist/DeflectorShieldSimulator-macos-universal.dmg
+          body: |
+            ## Which file do I want?
+
+            | Platform | File |
+            | --- | --- |
+            | Linux (AppImage, most distros) | `DeflectorShieldSimulator-x86_64.AppImage` |
+            | Linux (tarball) | `DeflectorShieldSimulator-linux-x86_64.tar.gz` |
+            | Windows (x86_64) | `DeflectorShieldSimulator-windows-x86_64.zip` |
+            | macOS (Intel and Apple Silicon, universal binary) | `DeflectorShieldSimulator-macos-universal.dmg` |
+
+            **Tested platforms:** Linux. The Windows and macOS builds are produced by
+            the same pipeline but have not been run on their target systems. Open an
+            issue if one fails to start.
+
+            **macOS:** this build is unsigned (ad-hoc signed only; no Apple Developer
+            certificate). On first launch, right-click (or Control-click) the app and
+            choose "Open" to bypass Gatekeeper's "unidentified developer" warning.
+
+            **Linux:** requires a working Vulkan driver. If the app fails to start,
+            install your GPU vendor's Vulkan driver package (e.g. `mesa-vulkan-drivers`,
+            `vulkan-radeon`, or the proprietary NVIDIA driver).
