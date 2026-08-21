@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en" prefix="og: https://ogp.me/ns#">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ page_title }}</title>
+<meta name="description" content="{{ page_description }}">
+<meta property="og:title" content="{{ page_title }}">
+<meta property="og:description" content="{{ page_description }}">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="{{ base }}/assets/site.css">
+<link rel="stylesheet" href="{{ base }}/assets/math/styles.css">
+<link rel="icon" href="{{ base }}/assets/favicon.svg" type="image/svg+xml">
+{% block head %}{% endblock %}
+</head>
+<body class="{{ body_class }}">
+<a class="skip" href="#content">Skip to content</a>
+
+<header class="masthead">
+  <a class="masthead-title" href="{{ base }}/">{{ site_title }}</a>
+  <nav class="masthead-nav">
+    <a href="{{ base }}/manual/">Manual</a>
+    <a href="{{ paper_url }}">Paper</a>
+    <a href="{{ repository }}">Source</a>
+  </nav>
+</header>
+
+{% block body %}{% endblock %}
+
+<footer class="site-footer">
+  <p>
+    {{ site_title }} {{ version }} &middot; {{ license }} &middot;
+    <a href="{{ repository }}">Source</a> &middot;
+    <a href="{{ base }}/manual/citing.html">How to cite</a>
+  </p>
+  <p class="footer-authors">
+    Max Morris &middot; Lucas Timotheo Sanches &middot; Steven R. Brandt
+  </p>
+</footer>
+</body>
+</html>

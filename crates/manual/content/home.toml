@@ -1,0 +1,57 @@
+tagline = "Watch particles fall through a warp-drive deflector shield, and export their geodesics."
+
+# GitHub's permanent redirect to the newest release. Asset names carry no version, so
+# these links keep working and the site never needs rebuilding for a release.
+release_base_url = "https://github.com/max-morris/DeflectorShieldSimulator/releases/latest/download/"
+
+bibtex = """
+@article{sanches2026exploring,
+  author        = {Sanches, Lucas Timotheo and Morris, Max and Brandt, Steven Robert},
+  title         = {Exploring Particle Geodesics in a Warp Drive Spacetime},
+  journal       = {arXiv preprint arXiv:2608.08213},
+  note          = {Accepted in Classical and Quantum Gravity},
+  year          = {2026}
+}
+"""
+
+[[download]]
+platform = "Linux"
+file = "DeflectorShieldSimulator-x86_64.AppImage"
+label = "DeflectorShieldSimulator-x86_64.AppImage"
+detect = "Linux"
+note = "One file, no install. Run chmod +x on it first. Needs a working Vulkan driver: mesa-vulkan-drivers, vulkan-radeon, vulkan-intel, or the proprietary NVIDIA driver. Built against glibc 2.35, so it runs on Ubuntu 22.04, Debian 12, Fedora 36 and later."
+
+[[download]]
+platform = "Linux (tarball)"
+file = "DeflectorShieldSimulator-linux-x86_64.tar.gz"
+label = "DeflectorShieldSimulator-linux-x86_64.tar.gz"
+note = "The bare binary, for anyone who would rather not use an AppImage. Your distribution supplies the X11, Wayland and ALSA libraries."
+
+[[download]]
+platform = "Windows"
+file = "DeflectorShieldSimulator-windows-x86_64.zip"
+label = "DeflectorShieldSimulator-windows-x86_64.zip"
+detect = "Win"
+note = "Windows 10 or later, 64-bit. No redistributable to install. Built by the release pipeline but not yet run on Windows."
+
+[[download]]
+platform = "macOS"
+file = "DeflectorShieldSimulator-macos-universal.dmg"
+label = "DeflectorShieldSimulator-macos-universal.dmg"
+detect = "Mac"
+note = "Universal, for Apple silicon and Intel, macOS 11 or later. The build is not signed by a registered Apple developer, so the first launch needs right-click then Open. See the install chapter. Built by the release pipeline but not yet run on macOS."
+
+[[link]]
+label = "Source on GitHub"
+url = "https://github.com/max-morris/DeflectorShieldSimulator"
+note = "the simulator, the manual, and this page"
+
+[[link]]
+label = "DeflectorShields"
+url = "https://github.com/lucass-carneiro/DeflectorShields"
+note = "the deflector-core crate that integrates the geodesics"
+
+[[link]]
+label = "arXiv:2608.08213"
+url = "https://arxiv.org/abs/2608.08213"
+note = "the paper this simulator accompanies"

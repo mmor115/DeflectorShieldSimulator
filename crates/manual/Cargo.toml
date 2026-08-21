@@ -1,0 +1,25 @@
+[package]
+name = "deflector-manual"
+description = "Generates the DeflectorShieldSimulator manual and project homepage as static HTML"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "manual"
+path = "src/main.rs"
+
+[dependencies]
+# default features pull in the CLI and syntect/oniguruma; the manual needs neither.
+comrak = { version = "0.54.0", default-features = false }
+# Pinned to 0.7.1: it is the newest tag that publishes styles.css and font.zip, and the
+# renderer must match the stylesheet we vendor in theme/math/.
+pulldown-latex = "0.7.1"
+minijinja = "2.24.0"
+serde.workspace = true
+serde_json.workspace = true
+anyhow.workspace = true
+toml = "1.1.4"
+walkdir = "2.5.0"

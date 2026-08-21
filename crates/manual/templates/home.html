@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block body %}
+<main id="content" class="home">
+
+  <section class="hero">
+    <h1>{{ site_title }}</h1>
+    <p class="tagline">{{ tagline }}</p>
+  </section>
+
+  <div class="prose intro">
+{{ intro }}
+  </div>
+
+  <section class="downloads">
+    <h2 id="download">Download</h2>
+    <p class="muted">Version <span data-latest-tag>latest release</span>. No installer; the binary carries its own assets.</p>
+    <ul class="download-list">
+      {% for item in downloads %}
+      <li data-detect="{{ item.detect }}">
+        <a class="download-link" href="{{ release_base_url }}{{ item.file }}">
+          <strong>{{ item.platform }}</strong>
+          <span class="file">{{ item.label }}</span>
+        </a>
+        {% if item.note %}<p class="note">{{ item.note }}</p>{% endif %}
+      </li>
+      {% endfor %}
+    </ul>
+    <p class="muted">
+      Every artifact also builds from source. See
+      <a href="{{ base }}/manual/building.html">Build from source</a>.
+    </p>
+  </section>
+
+  <div class="prose quickstart">
+{{ quickstart }}
+  </div>
+
+  <section class="links">
+    <h2 id="links">Links</h2>
+    <ul class="link-list">
+      {% for item in links %}
+      <li><a href="{{ item.url }}">{{ item.label }}</a>{% if item.note %} &mdash; {{ item.note }}{% endif %}</li>
+      {% endfor %}
+    </ul>
+  </section>
+
+  <section class="citation">
+    <h2 id="citing">Citing this work</h2>
+    <p>
+      If the simulator or the <code>deflector-core</code> physics crate contributes to
+      published research, cite the paper:
+    </p>
+    <p class="reference">{{ paper_citation }}</p>
+    <pre class="bibtex"><code>{{ bibtex }}</code></pre>
+    <p>
+      Full guidance, including how to cite a specific software version, is in
+      <a href="{{ base }}/manual/citing.html">How to cite</a>.
+    </p>
+  </section>
+
+</main>
+{% endblock %}
+{% block head %}
+<script defer src="{{ base }}/assets/home.js" data-repo="{{ repository }}"></script>
+{% endblock %}

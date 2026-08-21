@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block body %}
+<main id="content" class="wide">
+  <h1>{{ site_title }} manual</h1>
+  <p class="summary">{{ subtitle }}</p>
+
+  <form class="search" role="search" onsubmit="return false">
+    <label for="q">Search the manual</label>
+    <input type="search" id="q" placeholder="tagging, replay, units&hellip;" autocomplete="off">
+    <ol id="results" hidden></ol>
+  </form>
+
+  {% for part in parts %}
+  <section class="part">
+    <h2>{{ part.name }}</h2>
+    <dl class="chapter-list">
+      {% for chapter in part.chapters %}
+      <dt><a href="{{ base }}/manual/{{ chapter.slug }}.html">{{ chapter.title }}</a></dt>
+      <dd>{{ chapter.summary }}</dd>
+      {% endfor %}
+    </dl>
+  </section>
+  {% endfor %}
+</main>
+{% endblock %}
+{% block head %}
+<script defer src="{{ base }}/assets/manual.js" data-base="{{ base }}"></script>
+{% endblock %}

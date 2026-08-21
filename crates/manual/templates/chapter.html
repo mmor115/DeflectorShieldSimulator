@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block body %}
+<div class="layout">
+
+  <nav class="sidebar" aria-label="Manual contents">
+    <p class="sidebar-heading"><a href="{{ base }}/manual/">Manual</a></p>
+    {% for part in parts %}
+    <p class="part-name">{{ part.name }}</p>
+    <ol class="part-chapters">
+      {% for chapter in part.chapters %}
+      <li{% if chapter.slug == slug %} class="current"{% endif %}>
+        <a href="{{ base }}/manual/{{ chapter.slug }}.html">{{ chapter.title }}</a>
+      </li>
+      {% endfor %}
+    </ol>
+    {% endfor %}
+  </nav>
+
+  <main id="content" class="chapter">
+    <p class="breadcrumb">{{ part }}</p>
+    <h1>{{ title }}</h1>
+    {% if summary %}<p class="summary">{{ summary }}</p>{% endif %}
+
+    {% if headings %}
+    <details class="toc" open>
+      <summary>On this page</summary>
+      <ul>
+        {% for heading in headings %}
+        <li class="level-{{ heading.level }}"><a href="#{{ heading.id }}">{{ heading.text }}</a></li>
+        {% endfor %}
+      </ul>
+    </details>
+    {% endif %}
+
+    <div class="prose">
+{{ content }}
+    </div>
+
+    <nav class="chapter-nav">
+      {% if prev %}
+      <a class="prev" href="{{ base }}/manual/{{ prev.slug }}.html">
+        <span>Previous</span>{{ prev.title }}
+      </a>
+      {% endif %}
+      {% if next %}
+      <a class="next" href="{{ base }}/manual/{{ next.slug }}.html">
+        <span>Next</span>{{ next.title }}
+      </a>
+      {% endif %}
+    </nav>
+  </main>
+
+</div>
+{% endblock %}
