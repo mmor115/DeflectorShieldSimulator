@@ -4,6 +4,7 @@ mod game_entities;
 mod util;
 
 use bevy::prelude::*;
+use bevy_embedded_assets::{EmbeddedAssetPlugin, PluginMode};
 use bevy_mod_imgui::prelude::*;
 use deflector_core::types::{ParticleState, ParticleStateComponents};
 use game_entities::explosion::ExplosionPlugin;
@@ -34,6 +35,10 @@ const PHYSICS_STEP_SIZE: f64 = 0.1;
 
 fn main() {
     App::new()
+        /* Serves the embedded assets/ tree through the default asset source, so the
+           load call in setup.rs needs no embedded:// prefix. Must be registered
+           before DefaultPlugins. */
+        .add_plugins(EmbeddedAssetPlugin { mode: PluginMode::ReplaceDefault })
         .add_plugins(DefaultPlugins)
         .add_plugins(ImguiPlugin::default())
         .add_plugins(MeshPickingPlugin)

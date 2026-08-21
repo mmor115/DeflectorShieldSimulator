@@ -1,0 +1,38 @@
+[package]
+name = "deflector-shield-simulator"
+description = "Interactive simulator for particle geodesics in a warp-drive deflector-shield spacetime"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+authors.workspace = true
+repository.workspace = true
+
+[[bin]]
+name = "deflector-shield-simulator"
+path = "src/main.rs"
+
+[dependencies]
+deflector-core = { git = "https://github.com/lucass-carneiro/DeflectorShields.git", rev = "802671e" }
+bevy = { version = "0.16.1", features = ["default", "png"] }
+bevy_picking = { version = "0.16.1", features = ["bevy_mesh_picking_backend"] }
+bevy_mod_imgui = "0.7.2"
+bevy_embedded_assets = "0.13.0"
+imgui = "0.12.0"
+rand = "0.9.1"
+derive_more = { version = "2.0.1", features = ["from", "into", "display"] }
+serde.workspace = true
+serde_json.workspace = true
+uuid = { version = "1.17.0", features = ["v4"] }
+rand_xoshiro = { version = "0.7.0", features = ["serde"] }
+bincode = { version = "2.0.1", features = ["serde"] }
+enum-ordinalize = "4.3.2"
+
+# Improves bevy runtime performance
+log = { version = "*", features = ["max_level_debug", "release_max_level_warn"] }
+
+# Enables serde compatibility for particle state vectors
+nalgebra = { version = "0.33.2", features = ["serde", "serde-serialize"], default-features = false }
+
+[features]
+default = []
+wayland = ["bevy/wayland"]

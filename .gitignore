@@ -1,6 +1,15 @@
 /target
 /.idea/
-/.cargo/
-/sim.json
-/dump.json
-/dump.bin
+# A local cargo home, if one is placed here. The committed build configuration below
+# must still be tracked: the Windows release depends on it for static CRT linking.
+/.cargo/*
+!/.cargo/config.toml
+
+# Generated documentation site
+/dist/
+
+# Default output paths for Save Config and the history dumps. These are written
+# relative to the working directory, so they appear wherever the binary is run.
+sim.json
+dump.json
+dump.bin

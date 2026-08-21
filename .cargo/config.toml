@@ -1,0 +1,12 @@
+# Static CRT on Windows, so a release build needs no Visual C++ Redistributable.
+# cc-rs reads the crt-static target feature and switches the Dear ImGui C++ translation
+# unit from /MD to /MT to match, which keeps the link consistent.
+[target.x86_64-pc-windows-msvc]
+rustflags = ["-C", "target-feature=+crt-static"]
+
+# bevy_embedded_assets' build script looks for an `assets` directory beside `target/`,
+# which in a workspace is the workspace root. Point it at the simulator crate instead.
+# `relative = true` resolves against the directory holding this file, so the path is
+# correct from any working directory and needs no extra step in CI.
+[env]
+BEVY_ASSET_PATH = { value = "crates/simulator/assets", relative = true }

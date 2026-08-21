@@ -3,27 +3,6 @@
 version = 4
 
 [[package]]
-name = "DeflectorShieldSimulator"
-version = "0.1.0"
-dependencies = [
- "bevy",
- "bevy_mod_imgui",
- "bevy_picking",
- "bincode",
- "deflector-core",
- "derive_more 2.0.1",
- "enum-ordinalize",
- "imgui",
- "log",
- "nalgebra",
- "rand 0.9.1",
- "rand_xoshiro",
- "serde",
- "serde_json",
- "uuid",
-]
-
-[[package]]
 name = "ab_glyph"
 version = "0.2.29"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -655,6 +634,22 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "bevy_embedded_assets"
+version = "0.13.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c81ee60b1b01ca7414c43815d88043c8fe3adf11f1fdaf21eafcbcae84337292"
+dependencies = [
+ "bevy_app",
+ "bevy_asset",
+ "bevy_ecs",
+ "cargo-emit",
+ "futures-io",
+ "futures-lite",
+ "log",
+ "thiserror 2.0.12",
 ]
 
 [[package]]
@@ -1625,6 +1620,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "cargo-emit"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1582e1c9e755dd6ad6b224dcffb135d199399a4568d454bd89fe515ca8425695"
+
+[[package]]
 name = "cc"
 version = "1.2.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1950,7 +1951,7 @@ checksum = "2a2330da5de22e8a3cb63252ce2abb30116bf5265e89c0e01bc17015ce30a476"
 [[package]]
 name = "deflector-core"
 version = "0.1.0"
-source = "git+ssh://git@github.com/lucass-carneiro/DeflectorShields.git?rev=7ee3b48f#7ee3b48f6ac275868395c7f89c7430b5a2dae595"
+source = "git+https://github.com/lucass-carneiro/DeflectorShields.git?rev=802671e#802671ef0cef18972611d29a47e5c559cc857512"
 dependencies = [
  "env_logger",
  "log",
@@ -1958,6 +1959,28 @@ dependencies = [
  "rand 0.9.1",
  "rand_xoshiro",
  "thiserror 2.0.12",
+]
+
+[[package]]
+name = "deflector-shield-simulator"
+version = "0.1.0"
+dependencies = [
+ "bevy",
+ "bevy_embedded_assets",
+ "bevy_mod_imgui",
+ "bevy_picking",
+ "bincode",
+ "deflector-core",
+ "derive_more 2.0.1",
+ "enum-ordinalize",
+ "imgui",
+ "log",
+ "nalgebra",
+ "rand 0.9.1",
+ "rand_xoshiro",
+ "serde",
+ "serde_json",
+ "uuid",
 ]
 
 [[package]]
