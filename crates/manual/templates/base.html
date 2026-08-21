@@ -20,8 +20,12 @@
   <a class="masthead-title" href="{{ base }}/">{{ site_title }}</a>
   <nav class="masthead-nav">
     <a href="{{ base }}/manual/">Manual</a>
-    <a href="{{ paper_url }}">Paper</a>
-    <a href="{{ repository }}">Source</a>
+    {# URLs come from manual.toml and home.toml, which are part of this repository.
+       They are marked safe because the auto-escaper rewrites every "/" in them to
+       &#x2f;, which is valid but makes the emitted markup unreadable. Text nodes are
+       deliberately left escaped. #}
+    <a href="{{ paper_url|safe }}">Paper</a>
+    <a href="{{ repository|safe }}">Source</a>
   </nav>
 </header>
 
@@ -30,7 +34,7 @@
 <footer class="site-footer">
   <p>
     {{ site_title }} {{ version }} &middot; {{ license }} &middot;
-    <a href="{{ repository }}">Source</a> &middot;
+    <a href="{{ repository|safe }}">Source</a> &middot;
     <a href="{{ base }}/manual/citing.html">How to cite</a>
   </p>
   <p class="footer-authors">

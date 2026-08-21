@@ -17,7 +17,7 @@
     <ul class="download-list">
       {% for item in downloads %}
       <li data-detect="{{ item.detect }}">
-        <a class="download-link" href="{{ release_base_url }}{{ item.file }}">
+        <a class="download-link" href="{{ release_base_url|safe }}{{ item.file|safe }}">
           <strong>{{ item.platform }}</strong>
           <span class="file">{{ item.label }}</span>
         </a>
@@ -39,7 +39,7 @@
     <h2 id="links">Links</h2>
     <ul class="link-list">
       {% for item in links %}
-      <li><a href="{{ item.url }}">{{ item.label }}</a>{% if item.note %} &mdash; {{ item.note }}{% endif %}</li>
+      <li><a href="{{ item.url|safe }}">{{ item.label }}</a>{% if item.note %} &mdash; {{ item.note }}{% endif %}</li>
       {% endfor %}
     </ul>
   </section>
@@ -61,5 +61,5 @@
 </main>
 {% endblock %}
 {% block head %}
-<script defer src="{{ base }}/assets/home.js" data-repo="{{ repository }}"></script>
+<script defer src="{{ base }}/assets/home.js" data-repo="{{ repository|safe }}"></script>
 {% endblock %}
