@@ -1,0 +1,147 @@
+title = "DeflectorShieldSimulator"
+subtitle = "Interactive study of particle geodesics in a warp-drive deflector-shield spacetime"
+version = "0.1.0"
+repository = "https://github.com/max-morris/DeflectorShieldSimulator"
+paper_url = "https://arxiv.org/abs/2608.08213"
+paper_citation = "L. T. Sanches, M. Morris and S. R. Brandt, \"Exploring Particle Geodesics in a Warp Drive Spacetime\", Classical and Quantum Gravity (accepted); arXiv:2608.08213 [gr-qc]."
+license = "AGPL-3.0-or-later"
+
+# Chapter order is the order of these entries. Slugs come from the file names.
+
+[[chapter]]
+file = "what-this-is.md"
+title = "What this is"
+part = "Getting started"
+summary = "What the simulator models, what it does not, and how it relates to the paper."
+
+[[chapter]]
+file = "install.md"
+title = "Install and run"
+part = "Getting started"
+summary = "Download a build for your system, get past the first-launch prompts, and fix a black window."
+
+[[chapter]]
+file = "first-simulation.md"
+title = "Your first simulation"
+part = "Getting started"
+summary = "A ten-minute walkthrough that ends with exported data on disk."
+
+[[chapter]]
+file = "tune-the-shield.md"
+title = "Tune the shield"
+part = "How-to guides"
+summary = "Every shield parameter, the constraint that links speed and drag, and what shutdown does."
+
+[[chapter]]
+file = "particle-beam.md"
+title = "Control the particle beam"
+part = "How-to guides"
+summary = "Set the spread of incoming particles, mix in photons, and understand the spawn window."
+
+[[chapter]]
+file = "configurations.md"
+title = "Save and reuse a configuration"
+part = "How-to guides"
+summary = "Write a run to sim.json, load it back, and share it with a colleague."
+
+[[chapter]]
+file = "tagging.md"
+title = "Tag particles"
+part = "How-to guides"
+summary = "Mark one particle, keep it visible, and follow its geodesic through the shield."
+
+[[chapter]]
+file = "exporting.md"
+title = "Export trajectory data"
+part = "How-to guides"
+summary = "Write checkpoints or a full history as JSON or bincode, and keep the files a usable size."
+
+[[chapter]]
+file = "replays.md"
+title = "Run a reproducible replay"
+part = "How-to guides"
+summary = "Restart from a saved checkpoint and get the same trajectories every time."
+
+[[chapter]]
+file = "analysis.md"
+title = "Analyse dumps with warpsim.py"
+part = "How-to guides"
+summary = "Read a dump in Python, and build an input file with particles you choose."
+
+[[chapter]]
+file = "validation.md"
+title = "Validate numerics"
+part = "How-to guides"
+summary = "Catch NaN and non-normalised states, and choose what the simulator does about them."
+
+[[chapter]]
+file = "controls.md"
+title = "Controls"
+part = "Reference"
+summary = "The complete list of keyboard and mouse controls."
+
+[[chapter]]
+file = "parameters.md"
+title = "Parameters"
+part = "Reference"
+summary = "Every control in the Parameters window: range, default, units and meaning."
+
+[[chapter]]
+file = "file-formats.md"
+title = "File formats"
+part = "Reference"
+summary = "The layout of configuration files and of history dumps, field by field."
+
+[[chapter]]
+file = "units.md"
+title = "Physics, units and time"
+part = "Reference"
+summary = "Geometrized units, the state vector, the two length scales, and the timestep hierarchy."
+
+[[chapter]]
+file = "deflector-shield.md"
+title = "The deflector shield"
+part = "Explanation"
+summary = "The warp-drive metric, the role of each parameter, and what a geodesic through the shield means."
+
+[[chapter]]
+file = "natario-drive.md"
+title = "The Natario drive"
+part = "Explanation"
+summary = "The second warp-drive metric, what it leaves out, and what comparing the two shows."
+
+[[chapter]]
+file = "architecture.md"
+title = "How the simulation works"
+part = "Explanation"
+summary = "The update chain, the determinism model, and which effects are physics and which are display."
+
+[[chapter]]
+file = "limits.md"
+title = "Limits of the model"
+part = "Explanation"
+summary = "What this simulator cannot tell you, stated plainly."
+
+[[chapter]]
+file = "building.md"
+title = "Build from source"
+part = "Appendices"
+summary = "Toolchain, system packages, and the Wayland feature flag."
+
+[[chapter]]
+file = "known-limitations.md"
+title = "Known limitations"
+part = "Appendices"
+summary = "Rough edges in the current release, and how to work around them."
+
+[[chapter]]
+file = "citing.md"
+title = "How to cite"
+part = "Appendices"
+summary = "Cite the paper for the physics, and the release for the software."
+
+[[chapter]]
+file = "license.md"
+title = "License"
+part = "Appendices"
+summary = "AGPL-3.0-or-later, third-party notices, and the ship sprite attribution."
