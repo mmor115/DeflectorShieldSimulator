@@ -9,7 +9,7 @@ license = "AGPL-3.0-or-later"
 authors = [
     "Max Morris",
     "Lucas Timotheo Sanches",
-    "Steven Robert Brandt"
+    "Steven R. Brandt"
 ]
 repository = "https://github.com/max-morris/DeflectorShieldSimulator"
 

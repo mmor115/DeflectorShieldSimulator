@@ -63,7 +63,7 @@ pub fn update_space_dust(timer: Res<PhysicsUpdateTimer>,
         mut visibility,
         particle_type
     ) in particles {
-        if tagged_particles.is_tagged(&id) {
+        if tagged_particles.is_tagged(id) {
             *material = MeshMaterial2d(tagged_space_dust_material_asset.0.clone());
             *visibility = Visibility::Visible;
         } else {

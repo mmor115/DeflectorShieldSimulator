@@ -24,7 +24,7 @@ def get_warp_defaults():
           "deflector_back": 0.0,
           "deflector_sigma_factor": 1.1,
           "deflector_sigma_pushout": 1.0,
-          "warp_drive_kind": "ours"
+          "warp_drive_kind": "Ours"
         },
         "particle_settings": {
           "spawning_enabled": false,
@@ -499,7 +499,7 @@ if __name__ == "__main__":
     sim.u_drag = sim.u_bubble - sim.u_ship
 
     sim.deflector = 0.9
-    sim.deflector_sigma_pushback = 1
+    sim.deflector_sigma_pushout = 1
     sim.deflector_sigma_factor = 1
     sim.deflector_back = 1
 

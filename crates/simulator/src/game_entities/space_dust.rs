@@ -70,10 +70,9 @@ impl SpaceDustColorMaterials {
             ParticleType::Photon => &mut self.photon_particle_materials
         };
 
-        if let Some(weak_handle) = materials_bin.get_mut(&key) {
-            if let Some(strong_handle) = materials.get_strong_handle(weak_handle.id()) {
-                return strong_handle;
-            }
+        if let Some(weak_handle) = materials_bin.get_mut(&key)
+            && let Some(strong_handle) = materials.get_strong_handle(weak_handle.id()) {
+            return strong_handle;
         }
 
         let material = materials.add(color);
@@ -120,13 +119,13 @@ impl SpaceDustEntity {
     }
 
     pub fn new_from_resume(mesh: &Res<SpaceDustMesh>,
-                           mut color_materials: &mut ResMut<Assets<ColorMaterial>>,
+                           color_materials: &mut ResMut<Assets<ColorMaterial>>,
                            space_dust_mats: &mut ResMut<SpaceDustColorMaterials>,
                            state: SpaceDustPhysics,
                            id: SpaceDustId,
                            particle_type: ParticleType) -> Self {
         let mat = space_dust_mats.get_space_dust_color(
-            &mut color_materials,
+            color_materials,
             state.z(),
             &particle_type
         );

@@ -13,33 +13,21 @@ use deflector_core::types::ParticleType;
    invalid states. */
 
 pub fn nan_validator_pre_snapshot_predicate(settings: Res<ValidatorSettings>) -> bool {
-    match settings.nan_validator {
-        ValidatorErrBehavior::RemoveParticle => true,
-        ValidatorErrBehavior::ExplodeParticle => true,
-        _ => false
-    }
+    matches!(settings.nan_validator,
+             ValidatorErrBehavior::RemoveParticle | ValidatorErrBehavior::ExplodeParticle)
 }
 
 pub fn normalization_validator_pre_snapshot_predicate(settings: Res<ValidatorSettings>) -> bool {
-    match settings.normalization_validator {
-        ValidatorErrBehavior::RemoveParticle => true,
-        ValidatorErrBehavior::ExplodeParticle => true,
-        _ => false
-    }
+    matches!(settings.normalization_validator,
+             ValidatorErrBehavior::RemoveParticle | ValidatorErrBehavior::ExplodeParticle)
 }
 
 pub fn nan_validator_post_snapshot_predicate(settings: Res<ValidatorSettings>) -> bool {
-    match settings.nan_validator {
-        ValidatorErrBehavior::Die => true,
-        _ => false
-    }
+    matches!(settings.nan_validator, ValidatorErrBehavior::Die)
 }
 
 pub fn normalization_validator_post_snapshot_predicate(settings: Res<ValidatorSettings>) -> bool {
-    match settings.normalization_validator {
-        ValidatorErrBehavior::Die => true,
-        _ => false
-    }
+    matches!(settings.normalization_validator, ValidatorErrBehavior::Die)
 }
 
 pub fn nan_validator_pre_snapshot(particles: Query<(&SpaceDustPhysics, &Transform, Entity)>,

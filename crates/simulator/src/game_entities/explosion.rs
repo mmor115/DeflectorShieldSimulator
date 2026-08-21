@@ -29,9 +29,6 @@ pub struct Explosion;
 #[derive(Resource, Deref)]
 pub struct ExplosionMesh(pub Handle<Mesh>);
 
-#[derive(Resource, Deref)]
-pub struct ExplosionMaterial(pub Handle<ColorMaterial>);
-
 #[derive(Component, From)]
 pub struct ExplosionSecsLived(pub f32);
 
