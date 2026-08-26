@@ -48,7 +48,7 @@ After adding a particle, `add_particle` normalizes its velocity for its type:
 
 ## The `u_bubble` constraint
 
-`generate()` asserts `u_bubble == u_ship + u_drag` before writing the file. The simulator enforces the same constraint on the **Speed** and **Drag** sliders (see [tune-the-shield.html](tune-the-shield.html)). The bubble's asymptotic speed must equal the ship's own speed plus the shield's drag on it. Set all three consistently before calling `generate()`, or the assertion fails.
+`generate()` asserts `u_bubble == u_ship + u_drag` before writing the file. The simulator enforces the same constraint on the **Speed** and **Drag** sliders (see [tune-the-shield.html](tune-the-shield.html)). The bubble's asymptotic speed must equal the ship's own speed plus the bubble's drag on it. Set all three consistently before calling `generate()`, or the assertion fails.
 
 > [!NOTE]
 > Assigning a name the class does not define creates a plain Python attribute instead of raising an error, and the value never reaches the configuration. Check spelling against the property list above when a setting appears to have no effect.

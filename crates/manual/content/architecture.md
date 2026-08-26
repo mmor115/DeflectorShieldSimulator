@@ -87,7 +87,7 @@ Four things you see are presentation only.
 |---|---|
 | Particles vanish at the edges | A culling window in game units. No physics happens there. |
 | Particle color | The $z$ coordinate, mapped across the range $-15$ to $15$ in physics units. |
-| The two rings | Drawn at the bubble radius and one transition width beyond it. The field is smooth, not a hard edge. |
+| The two rings | Drawn at the bubble radius and one transition width beyond it. They mark the warp bubble, not the deflector shell. The field is smooth, not a hard edge. |
 | Explosions | A one-second marker where a validator rejected a particle. Not a collision. |
 
 There is no collision detection anywhere in the program. Nothing in the model can hit

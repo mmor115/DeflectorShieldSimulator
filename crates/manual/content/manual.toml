@@ -1,5 +1,5 @@
 title = "DeflectorShieldSimulator"
-subtitle = "Interactive study of particle geodesics in a warp-drive deflector-shield spacetime"
+subtitle = "Interactive study of particle geodesics in a warp-drive spacetime with an optional deflector shield"
 version = "0.1.0"
 repository = "https://github.com/max-morris/DeflectorShieldSimulator"
 paper_url = "https://arxiv.org/abs/2608.08213"
@@ -30,7 +30,7 @@ summary = "A ten-minute walkthrough that ends with exported data on disk."
 file = "tune-the-shield.md"
 title = "Tune the shield"
 part = "How-to guides"
-summary = "Every shield parameter, the constraint that links speed and drag, and what shutdown does."
+summary = "Every bubble and deflector parameter, the constraint that links speed and drag, and what shutdown does."
 
 [[chapter]]
 file = "particle-beam.md"
@@ -48,7 +48,7 @@ summary = "Write a run to sim.json, load it back, and share it with a colleague.
 file = "tagging.md"
 title = "Tag particles"
 part = "How-to guides"
-summary = "Mark one particle, keep it visible, and follow its geodesic through the shield."
+summary = "Mark one particle, keep it visible, and follow its geodesic through the bubble."
 
 [[chapter]]
 file = "exporting.md"
@@ -102,7 +102,7 @@ summary = "Geometrized units, the state vector, the two length scales, and the t
 file = "deflector-shield.md"
 title = "The deflector shield"
 part = "Explanation"
-summary = "The warp-drive metric, the role of each parameter, and what a geodesic through the shield means."
+summary = "The warp-drive metric, the deflector term added to it, and what a geodesic through that geometry means."
 
 [[chapter]]
 file = "natario-drive.md"

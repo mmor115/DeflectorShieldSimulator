@@ -1,6 +1,10 @@
 This chapter covers the **Bubble** tab: what each parameter changes, the constraint that
 links **Speed** to **Drag**, and what the shutdown button does.
 
+**Radius**, **Sigma**, **Speed** and **Drag** belong to the warp bubble. **Deflection
+Strength**, **Sigma Pushout**, **Sigma Factor** and **Deflector Back** belong to the
+optional deflector, an added term constructed in the same style as the drive.
+
 For the metric these parameters appear in, see
 [The deflector shield](deflector-shield.html).
 
@@ -85,9 +89,9 @@ slider reverts and shows `Shield Drag out of range!` in red. Nothing breaks.
 > when you load a configuration file, so a bad file can also terminate the program. See
 > [Known limitations](known-limitations.html).
 
-## Turn the shield off and on
+## Turn the bubble off and on
 
-The button at the bottom of the tab reads **Shut down** while the shield is running.
+The button at the bottom of the tab reads **Shut down** while the bubble is running.
 
 Click **Shut down** to set **Speed**, **Drag** and **Deflection Strength** to zero. The
 bubble and the deflector disappear, both rings are hidden, and particle spawning stops.
@@ -97,10 +101,10 @@ position, so any slippage you have accumulated survives.
 The button now reads **Shut up**. Click it to restore the stashed parameters. The bubble
 origin moves to wherever the ship has reached, and the ship state is rebuilt from there.
 
-While the shield is shut down, the sliders in this tab edit the stashed values rather than
+While the bubble is shut down, the sliders in this tab edit the stashed values rather than
 the live ones. Your edits take effect when you click **Shut up**.
 
 ## Keep a configuration you like
 
-Once the shield behaves the way you want, open the **Save & Load** tab and click
+Once the configuration behaves the way you want, open the **Save & Load** tab and click
 **Save Config**. See [Save and reuse a configuration](configurations.html).

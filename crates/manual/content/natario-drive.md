@@ -7,7 +7,7 @@ The **Drive** tab selects which warp-drive metric the simulator evolves.
 
 | Drive | What it is |
 |---|---|
-| **Ours** | The CCT deflector-shield drive of the paper. This is the default and the subject of the rest of this manual. |
+| **Ours** | The CCT warp drive of the paper, with an optional deflector term. This is the default and the subject of the rest of this manual. |
 | **Natario** | A Natário zero-expansion drive. It carries a ship but has no deflector. |
 
 Both drives share the same ADM form and the same bubble motion described in

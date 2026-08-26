@@ -1,9 +1,9 @@
 This chapter covers saving a run to a file, loading it back, and what to send a colleague
 so they can reproduce your setup.
 
-A configuration holds the parameters of a run: the shield geometry, the particle
-settings, the display options and the validator settings. It does not hold the particles
-themselves. To capture those, export a history instead. See
+A configuration holds the parameters of a run: the bubble and deflector geometry, the
+particle settings, the display options and the validator settings. It does not hold the
+particles themselves. To capture those, export a history instead. See
 [Export trajectory data](exporting.html).
 
 ## Save the current setup
@@ -41,7 +41,7 @@ The repository has two configurations in `configs/`.
 
 | File | What it shows |
 |---|---|
-| `cool.json` | A shield running with both rings hidden, at a small positive slippage |
+| `cool.json` | A bubble running with both rings hidden, at a small positive slippage |
 | `pos_slippage.json` | Positive slippage with an incoming velocity spread, the case the name describes |
 
 Copy one next to the executable, put its name in **Config Path**, and load it.

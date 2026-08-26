@@ -2,7 +2,7 @@
 
 1. Download the file for your system and run it.
 2. The ship sits at the center with two blue rings around it. These are the inner and
-   outer edges of the shield. Particles enter from the right.
+   outer edges of the warp bubble. Particles enter from the right.
 3. Drag the **Radius** slider in the **Bubble** tab and watch the trajectories change.
 4. Press <kbd>Space</kbd> to pause. Scroll to zoom, hold the right mouse button to pan,
    and click the middle button to reset the view.
