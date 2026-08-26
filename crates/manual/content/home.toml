@@ -32,14 +32,14 @@ platform = "Windows"
 file = "DeflectorShieldSimulator-windows-x86_64.zip"
 label = "DeflectorShieldSimulator-windows-x86_64.zip"
 detect = "Win"
-note = "Windows 10 or later, 64-bit. No redistributable to install. Built by the release pipeline but not yet run on Windows."
+note = "Windows 10 or later, 64-bit."
 
 [[download]]
 platform = "macOS"
 file = "DeflectorShieldSimulator-macos-universal.dmg"
 label = "DeflectorShieldSimulator-macos-universal.dmg"
 detect = "Mac"
-note = "Universal, for Apple silicon and Intel, macOS 11 or later. The build is not signed by a registered Apple developer, so the first launch needs right-click then Open. See the install chapter. Built by the release pipeline but not yet run on macOS."
+note = "Universal, for Apple silicon and Intel, macOS 11 or later. The build is not signed by a registered Apple developer, so the first launch needs right-click then Open. See the install chapter. Built by the release pipeline but NOT YET TESTED."
 
 [[link]]
 label = "Source on GitHub"

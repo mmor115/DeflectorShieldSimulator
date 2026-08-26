@@ -13,9 +13,8 @@ Take the file for your system from the
 | macOS | `DeflectorShieldSimulator-macos-universal.dmg` |
 
 > [!NOTE]
-> Linux is the only platform this release is tested on. The Windows and macOS
-> builds come from the same pipeline and are complete, but they have not been run
-> on their target systems. Open an issue if one fails to start.
+> The following systems have been tested and are known to work: Debian 13 and Windows 11.
+> Please open an issue on GitHub if you encounter trouble running the simulator on your system.
 
 ## Linux
 
