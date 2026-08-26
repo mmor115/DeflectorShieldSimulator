@@ -1,4 +1,4 @@
-tagline = "Watch particles fall through a warp-drive deflector shield, and export their geodesics."
+tagline = "Watch particles fall through a warp drive with an optional deflector shield and export their geodesics."
 
 # GitHub's permanent redirect to the newest release. Asset names carry no version, so
 # these links keep working and the site never needs rebuilding for a release.

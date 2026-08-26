@@ -1,5 +1,5 @@
-This tutorial takes about ten minutes. You will steer the view, change the shield, follow
-one particle, and finish with a data file on disk.
+This tutorial takes about ten minutes. You will steer the view, change the bubble and
+the shield, follow one particle, and finish with a data file on disk.
 
 Follow it in order. Later chapters explain each step in depth; here the goal is to get
 the feel of the program.
@@ -34,14 +34,15 @@ That is every camera control. See [Controls](controls.html).
 
 ## 3. Read the rings
 
-The two blue rings are the shield. The inner ring is at the bubble radius. The outer ring
-is one transition width further out, so the gap between them is the wall the particles
-cross.
+The two blue rings are the inner and outer surfaces of the warp bubble. The inner ring is
+at the bubble radius. The outer ring is one transition width further out, so the gap
+between them is the wall the particles cross. The deflector, when it is on, is a
+separate shell sitting near that wall; it is not drawn as its own ring.
 
 Watch a particle enter from the right. Outside the outer ring it travels in a straight
 line. As it reaches the wall it turns aside.
 
-## 4. Change the shield
+## 4. Change the bubble and the shield
 
 Open the **Bubble** tab of the **Parameters** window.
 
@@ -49,7 +50,8 @@ Drag **Radius** from `4` to `2`. Both rings shrink, and particles now pass much 
 the ship before turning.
 
 Drag **Radius** back to `4`, then drag **Deflection Strength** from `0.1` to `0.6`. The
-rings do not move, but the particles turn much harder.
+rings do not move, but the particles turn much harder. The rings mark the bubble;
+**Deflection Strength** is the added shield, so changing it does not move them.
 
 Now set **Deflection Strength** back to `0.1`.
 
@@ -70,13 +72,13 @@ to follow.
 
 Press <kbd>Space</kbd> to pause.
 
-Click a particle that has not yet reached the shield. It turns magenta. You have tagged
+Click a particle that has not yet reached the bubble. It turns magenta. You have tagged
 it, and the tag is stored against the identity of that particle rather than its position.
 
 Open the **Visuals** tab and switch on **Hide untagged particles**. Every other particle
 disappears. Your tagged particle stays visible.
 
-Press <kbd>Space</kbd> to resume, and watch that one trajectory cross the shield with
+Press <kbd>Space</kbd> to resume, and watch that one trajectory cross the bubble with
 nothing else in the way.
 
 ## 7. Slow it down

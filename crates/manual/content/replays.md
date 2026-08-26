@@ -26,7 +26,7 @@ Click **Unload History** at any point to discard the staged file without resumin
 Resuming from checkpoint *N* replaces the running state with everything that checkpoint recorded:
 
 - The **Particles**, **Visuals**, and shutdown settings in effect at that checkpoint.
-- The physics parameters: shield radius, sigma, speed, drag, and every deflector parameter (see [parameters.html](parameters.html)).
+- The physics parameters: bubble radius, sigma, speed, drag, and every deflector parameter (see [parameters.html](parameters.html)).
 - The global simulation time.
 - The RNG's exact internal state, not only its original seed.
 - The ship, despawned and respawned at its recorded state.
@@ -45,7 +45,7 @@ After a resume, the live history keeps only the checkpoints up to and including 
 
 Every random draw in the simulation comes from one seeded xoshiro256++ generator (see [units.html](units.html)), including a new particle's spawn position, initial velocity, and id. A checkpoint records that generator's exact internal state, not a summary of it.
 
-Resuming installs that exact state before the next tick runs. From that point on, every call the simulator makes to the generator returns the same sequence of values it returned after the original checkpoint. New particles spawn at the same simulated times, in the same positions, with the same ids, and their geodesics through the shield play out identically.
+Resuming installs that exact state before the next tick runs. From that point on, every call the simulator makes to the generator returns the same sequence of values it returned after the original checkpoint. New particles spawn at the same simulated times, in the same positions, with the same ids, and their geodesics through the bubble play out identically.
 
 ## Worked example: verify determinism yourself
 

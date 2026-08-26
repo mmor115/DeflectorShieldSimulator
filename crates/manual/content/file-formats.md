@@ -8,12 +8,12 @@ The simulator reads and writes a single JSON file for its settings, from the **S
 
 | Field | Type | Meaning |
 |---|---|---|
-| `radius` | number | The shield radius. |
-| `sigma` | number | The width of the shield's transition region. |
-| `u` | number | The shield speed. |
-| `u0` | number | The dragging speed the shield applies to particles it carries along. |
-| `k0` | number | The deflection strength. |
-| `x0` | number | The shield position recorded at time `t0`. The simulator updates this itself whenever the shield changes speed; treat it as internal state, not a value to hand-tune. |
+| `radius` | number | The bubble radius. |
+| `sigma` | number | The width of the bubble's transition region. |
+| `u` | number | The bubble speed. |
+| `u0` | number | The dragging speed the bubble applies to particles it carries along. |
+| `k0` | number | The deflection strength of the optional shield. Zero turns the added shield off. |
+| `x0` | number | The bubble position recorded at time `t0`. The simulator updates this itself whenever the bubble changes speed; treat it as internal state, not a value to hand-tune. |
 | `t0` | number | The simulation time at which `x0` was recorded. |
 | `gamma` | number | The time dilation strength. Every shipped configuration sets this to `0.0`; the source marks the field for eventual removal. |
 | `epsilon` | number | A small number substituted for zero to avoid division by zero in the metric. Shipped configurations use `1e-12`. |
@@ -48,15 +48,15 @@ See [Control the particle beam](particle-beam.html) for how these variances comb
 
 | Field | Type | Meaning |
 |---|---|---|
-| `show_inner_bubble` | boolean | Whether the simulator draws the inner shield surface. |
-| `show_outer_bubble` | boolean | Whether the simulator draws the outer shield surface. |
+| `show_inner_bubble` | boolean | Whether the simulator draws the inner bubble surface. The UI checkbox is labeled **Draw inner shield**. |
+| `show_outer_bubble` | boolean | Whether the simulator draws the outer bubble surface. The UI checkbox is labeled **Draw outer shield**. |
 | `hide_untagged_particles` | boolean | Whether the simulator hides every particle that is not tagged. Defaults to `false` if omitted. |
 
 ### `shutdown_config`
 
 | Field | Type | Meaning |
 |---|---|---|
-| `in_shutdown_state` | boolean | While `true`, the simulator hides the shield and stops spawning particles. |
+| `in_shutdown_state` | boolean | While `true`, the simulator hides the bubble and the deflector and stops spawning particles. |
 | `temporary_parameters` | object or `null` | A `physics_config` object used only while `in_shutdown_state` is `true`, or `null` when not in use. |
 
 ### `validator_settings`
@@ -121,7 +121,7 @@ Some values worth noting:
 
 - `x_velocity_variance` and `y_velocity_variance` are both `0.014563`, and `z_velocity_variance` is `0.0`. Particles spawn with a small, equal spread of velocity in x and y, and none in z.
 - `z_position_variance` is `0.0`, so every particle spawns at the same z position, and `y_position_variance` is `150.0`, so particles spawn across a wide range of y.
-- `in_shutdown_state` is `false` and `temporary_parameters` is `null`: the shield is not in a shutdown transition.
+- `in_shutdown_state` is `false` and `temporary_parameters` is `null`: the bubble is not in a shutdown transition.
 
 ## The history dump
 

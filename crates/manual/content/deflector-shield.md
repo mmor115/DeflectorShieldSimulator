@@ -13,8 +13,8 @@ coordinates along with it. In ADM form the line element is
 
 $$ds^2 = -\,\mathrm{d}t^2 + \sum_i \left(\mathrm{d}x^i - v^i\,\mathrm{d}t\right)^2$$
 
-Everything the shield does lives in $\vec{v}$. A particle with no coordinate velocity is
-still transported, because the coordinates themselves move.
+Everything the drive and the shield do lives in $\vec{v}$. A particle with no
+coordinate velocity is still transported, because the coordinates themselves move.
 
 The bubble travels along the $x$ axis at constant speed:
 
@@ -68,7 +68,10 @@ and vanishes outside. Two sliders control it:
 
 ## The transverse part: the deflector
 
-The deflector is the addition that makes this a shield rather than a drive. It pushes
+The deflector is an added component, constructed in the same style as the warp drive
+itself: a localized shift-vector term that uses the same transition function, but pushing things out
+transversely rather than along the axis of travel. It is optional. Set **Deflection
+Strength** to zero and the metric is a drive with no shield. With it on, it pushes
 matter sideways, away from the axis. Its magnitude is
 
 $$v_{\mathrm{base}} = k_0 \cdot f_a \cdot f_b \cdot f_c$$
@@ -113,8 +116,8 @@ particles piling up ahead of the ship, that is this effect and not a fault.
 
 ## Front-only deflection
 
-The last factor decides whether the shield acts all the way around or only ahead of the
-ship. With $b$ for **Deflector Back**:
+The last factor decides whether the deflector acts all the way around or only ahead of
+the ship. With $b$ for **Deflector Back**:
 
 $$f_c = (1 - b)\, f(\sigma - x;\, 0,\, \sigma) + b$$
 

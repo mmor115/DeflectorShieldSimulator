@@ -7,7 +7,7 @@ arrives, and how to mix photons into it.
 Existing particles keep moving, so this is how you clear the field to watch the last few
 trajectories finish.
 
-Spawning is also suppressed while the shield is shut down.
+Spawning is also suppressed while the bubble is shut down.
 
 ## Aim the stream
 
@@ -20,7 +20,7 @@ are ten times the physics units. See [Physics, units and time](units.html).
 | **z-Position Spread** | `0.0` – `150.0` | `0.0` | The same for $z$ |
 
 At the default the beam fills the screen, which is right for seeing the shape of the
-shield. Reduce **y-Position Spread** to around `20` to aim a narrow stream at the ship,
+deflection. Reduce **y-Position Spread** to around `20` to aim a narrow stream at the ship,
 which is right for following one trajectory.
 
 **z-Position Spread** moves particles out of the plane you are looking at. It changes the
@@ -70,7 +70,7 @@ spread sliders set only their direction. The simulator renormalises them on crea
 
 Photons are drawn blue to cyan; massive particles are drawn red to yellow. In both cases
 the shade encodes the $z$ coordinate. Set the ratio to `0.5` to compare the two side by
-side through the same shield.
+side through the same geometry.
 
 ## What comes out
 

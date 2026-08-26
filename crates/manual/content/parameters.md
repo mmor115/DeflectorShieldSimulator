@@ -7,8 +7,9 @@ symbol, and meaning.
 |---|---|---|---|---|
 | **Warp Drive** | **Ours**, **Natario** | **Ours** | `warp_drive_kind` | Which warp-drive metric the simulation evolves. |
 
-**Ours** is the CCT deflector-shield drive of the paper, and everything else in this
-chapter describes it. **Natario** is a zero-expansion drive with no deflector; see
+**Ours** is the CCT warp drive of the paper, with an optional deflector-shield term
+constructed in the same style as the drive. Everything else in this chapter describes
+it. **Natario** is a zero-expansion drive with no deflector; see
 [The Natario drive](natario-drive.html).
 
 The control is disabled while the bubble is shut down.
@@ -25,10 +26,17 @@ The control is disabled while the bubble is shut down.
 | **Sigma** | 0.1 to 4 | 4 | `sigma` | "The width of the transition between the inner and outer shield regions." |
 | **Speed** | 0.0 to 0.9 | 0.5 | `u` | The bubble's speed. Raising it also raises **Drag** by the same amount. |
 | **Drag** | 0.0 to 0.9 | 0.5 | `u0` | How far the ship's velocity lags behind the bubble. The ship's x-velocity is `u - u0`. |
-| **Deflection Strength** | 0.0 to 0.9 | 0.1 | `k0` | The shield's deflection strength. |
+| **Deflection Strength** | 0.0 to 0.9 | 0.1 | `k0` | The deflector's strength. Zero turns the added shield off. |
 | **Sigma Pushout** | 0.0 to 4.0 | 0.8 | `deflector_sigma_pushout` | How far beyond **Radius** the deflecting shell sits, in multiples of **Sigma**. The shell is centered at $R + p\,\sigma$. `1.0` reproduces the fixed shell of the published metric; the default of `0.8` is deliberate, see [The deflector shield](deflector-shield.html). |
 | **Sigma Factor** | 0.0 to 4.0 | 1.0 | `deflector_sigma_factor` | How thick the deflecting shell is, in multiples of **Sigma**. The shell reaches $q\,\sigma$ to either side of its center. |
 | **Deflector Back** | 0.0 to 1.0 | 1.0 | `deflector_back` | `1.0` deflects all round the ship. `0.0` deflects ahead of the ship only and switches off behind it. Intermediate values interpolate. |
+
+> [!NOTE]
+> **Radius**, **Sigma**, **Speed** and **Drag** belong to the warp bubble. **Deflection
+> Strength**, **Sigma Pushout**, **Sigma Factor** and **Deflector Back** belong to the
+> optional deflector. The **Radius** and **Sigma** tooltips say "shield" because the UI
+> draws those bubble surfaces as the inner and outer rings; the deflector is a separate
+> shell, placed by **Sigma Pushout** and **Sigma Factor**.
 
 > [!NOTE]
 > **Drag**, **Deflection Strength**, **Sigma Pushout**, **Sigma Factor** and **Deflector
@@ -104,12 +112,12 @@ this tab.
 
 | Control | Range | Default | Symbol | Meaning |
 |---|---|---|---|---|
-| **Draw inner shield** | on/off | on | `show_inner_bubble` | Shows or hides the inner shield mesh. |
-| **Draw outer shield** | on/off | on | `show_outer_bubble` | Shows or hides the outer shield mesh. |
+| **Draw inner shield** | on/off | on | `show_inner_bubble` | Shows or hides the inner bubble mesh. |
+| **Draw outer shield** | on/off | on | `show_outer_bubble` | Shows or hides the outer bubble mesh. |
 | **Hide untagged particles** | on/off | off | `hide_untagged_particles` | Hides every particle without a tag. Tagged particles stay visible either way. |
 
 > [!NOTE]
-> Shutting down the bubble hides both shields regardless of these checkboxes, and
+> Shutting down the bubble hides both rings regardless of these checkboxes, and
 > restores them to the checkbox state once you shut up.
 
 ## Save & Load
